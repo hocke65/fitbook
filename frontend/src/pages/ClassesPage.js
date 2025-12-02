@@ -2,12 +2,15 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { classesApi, bookingsApi } from '../services/api';
 import { useLanguage } from '../context/LanguageContext';
 import ClassCard from '../components/ClassCard';
+import CalendarView from '../components/CalendarView';
 
 const ClassesPage = () => {
   const [classes, setClasses] = useState([]);
   const [myBookings, setMyBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [displayMode, setDisplayMode] = useState('calendar'); // 'calendar' or 'grid'
+  const [selectedClass, setSelectedClass] = useState(null);
 
   const { t } = useLanguage();
 
@@ -39,6 +42,14 @@ const ClassesPage = () => {
 
   const bookedClassesCount = myBookings.filter(b => b.status === 'confirmed').length;
 
+  const handleClassClick = (classData) => {
+    setSelectedClass(classData);
+  };
+
+  const closeClassModal = () => {
+    setSelectedClass(null);
+  };
+
   if (loading) {
     return (
       <div className="loading">
@@ -69,6 +80,22 @@ const ClassesPage = () => {
               {bookedClassesCount > 0 && ` • ${bookedClassesCount} ${t('classes.booked')}`}
             </p>
           </div>
+          <div className="display-mode-toggle">
+            <button
+              className={`display-mode-btn ${displayMode === 'calendar' ? 'active' : ''}`}
+              onClick={() => setDisplayMode('calendar')}
+              title={t('calendar.calendarView')}
+            >
+              <span>📅</span> {t('calendar.calendar')}
+            </button>
+            <button
+              className={`display-mode-btn ${displayMode === 'grid' ? 'active' : ''}`}
+              onClick={() => setDisplayMode('grid')}
+              title={t('calendar.listView')}
+            >
+              <span>📋</span> {t('calendar.list')}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -80,6 +107,12 @@ const ClassesPage = () => {
             {t('classes.noClassesText')}
           </p>
         </div>
+      ) : displayMode === 'calendar' ? (
+        <CalendarView
+          classes={classes}
+          onClassClick={handleClassClick}
+          isClassBooked={isClassBooked}
+        />
       ) : (
         <div className="classes-grid">
           {classes.map((classItem) => (
@@ -91,6 +124,29 @@ const ClassesPage = () => {
               showParticipants={false}
             />
           ))}
+        </div>
+      )}
+
+      {/* Class Detail Modal */}
+      {selectedClass && (
+        <div className="modal-overlay" onClick={closeClassModal}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3 className="modal-title">{selectedClass.title}</h3>
+              <button className="modal-close" onClick={closeClassModal}>×</button>
+            </div>
+            <div className="modal-body">
+              <ClassCard
+                classData={selectedClass}
+                isBooked={isClassBooked(selectedClass.id)}
+                onBookingChange={() => {
+                  fetchData();
+                  closeClassModal();
+                }}
+                showParticipants={false}
+              />
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -74,6 +74,19 @@ const translations = {
       minutes: 'min',
       instructor: 'Instruktör',
     },
+    // Calendar
+    calendar: {
+      calendar: 'Kalender',
+      list: 'Lista',
+      calendarView: 'Kalendervy',
+      listView: 'Listvy',
+      today: 'Idag',
+      month: 'Månad',
+      week: 'Vecka',
+      day: 'Dag',
+      spotsLeft: 'platser kvar',
+      noClassesThisDay: 'Inga pass denna dag',
+    },
     // My Bookings
     myBookings: {
       title: 'Mina Bokningar',
@@ -243,6 +256,19 @@ const translations = {
       tomorrow: 'Tomorrow',
       minutes: 'min',
       instructor: 'Instructor',
+    },
+    // Calendar
+    calendar: {
+      calendar: 'Calendar',
+      list: 'List',
+      calendarView: 'Calendar view',
+      listView: 'List view',
+      today: 'Today',
+      month: 'Month',
+      week: 'Week',
+      day: 'Day',
+      spotsLeft: 'spots left',
+      noClassesThisDay: 'No classes this day',
     },
     // My Bookings
     myBookings: {
