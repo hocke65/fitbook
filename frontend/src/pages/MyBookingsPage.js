@@ -1,12 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { bookingsApi } from '../services/api';
+import { useLanguage } from '../context/LanguageContext';
 
 const MyBookingsPage = () => {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [cancellingId, setCancellingId] = useState(null);
+
+  const { language, t } = useLanguage();
 
   const fetchBookings = useCallback(async () => {
     try {
@@ -16,12 +19,12 @@ const MyBookingsPage = () => {
       );
       setBookings(confirmedBookings);
     } catch (err) {
-      setError('Kunde inte hämta dina bokningar.');
+      setError(t('errors.fetchBookings'));
       console.error(err);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     fetchBookings();
@@ -33,7 +36,7 @@ const MyBookingsPage = () => {
       await bookingsApi.cancel(classId);
       fetchBookings();
     } catch (err) {
-      setError(err.response?.data?.error || 'Kunde inte avboka passet.');
+      setError(err.response?.data?.error || t('errors.cancelFailed'));
     } finally {
       setCancellingId(null);
     }
@@ -46,12 +49,12 @@ const MyBookingsPage = () => {
     tomorrow.setDate(tomorrow.getDate() + 1);
 
     if (date.toDateString() === today.toDateString()) {
-      return 'Idag';
+      return t('classes.today');
     } else if (date.toDateString() === tomorrow.toDateString()) {
-      return 'Imorgon';
+      return t('classes.tomorrow');
     }
 
-    return date.toLocaleDateString('sv-SE', {
+    return date.toLocaleDateString(language === 'sv' ? 'sv-SE' : 'en-US', {
       weekday: 'short',
       day: 'numeric',
       month: 'short',
@@ -60,7 +63,7 @@ const MyBookingsPage = () => {
 
   const formatTime = (dateString) => {
     const date = new Date(dateString);
-    return date.toLocaleTimeString('sv-SE', {
+    return date.toLocaleTimeString(language === 'sv' ? 'sv-SE' : 'en-US', {
       hour: '2-digit',
       minute: '2-digit',
     });
@@ -74,12 +77,24 @@ const MyBookingsPage = () => {
     const days = Math.floor(hours / 24);
 
     if (days > 0) {
-      return `om ${days} ${days === 1 ? 'dag' : 'dagar'}`;
+      if (language === 'sv') {
+        return `om ${days} ${days === 1 ? 'dag' : 'dagar'}`;
+      } else {
+        return `in ${days} ${days === 1 ? 'day' : 'days'}`;
+      }
     } else if (hours > 0) {
-      return `om ${hours} ${hours === 1 ? 'timme' : 'timmar'}`;
+      if (language === 'sv') {
+        return `om ${hours} ${hours === 1 ? 'timme' : 'timmar'}`;
+      } else {
+        return `in ${hours} ${hours === 1 ? 'hour' : 'hours'}`;
+      }
     } else {
       const minutes = Math.floor(diff / (1000 * 60));
-      return `om ${minutes} min`;
+      if (language === 'sv') {
+        return `om ${minutes} min`;
+      } else {
+        return `in ${minutes} min`;
+      }
     }
   };
 
@@ -87,7 +102,7 @@ const MyBookingsPage = () => {
     return (
       <div className="loading">
         <div className="spinner"></div>
-        <p className="loading-text">Laddar dina bokningar...</p>
+        <p className="loading-text">{t('myBookings.loadingBookings')}</p>
       </div>
     );
   }
@@ -95,11 +110,11 @@ const MyBookingsPage = () => {
   return (
     <div className="container page">
       <div className="page-header">
-        <h1 className="page-title">Mina Bokningar</h1>
+        <h1 className="page-title">{t('myBookings.title')}</h1>
         <p className="page-subtitle">
           {bookings.length > 0
-            ? `Du har ${bookings.length} kommande ${bookings.length === 1 ? 'bokning' : 'bokningar'}`
-            : 'Inga kommande bokningar'}
+            ? `${t('myBookings.youHave')} ${bookings.length} ${t('myBookings.upcoming')} ${bookings.length === 1 ? t('myBookings.bookingSingular') : t('myBookings.bookingPlural')}`
+            : t('myBookings.noUpcoming')}
         </p>
       </div>
 
@@ -112,12 +127,12 @@ const MyBookingsPage = () => {
       {bookings.length === 0 ? (
         <div className="empty-state">
           <div className="empty-state-icon">📋</div>
-          <h2 className="empty-state-title">Inga bokningar</h2>
+          <h2 className="empty-state-title">{t('myBookings.noBookings')}</h2>
           <p className="empty-state-text">
-            Du har inga kommande bokade träningspass. Hitta ett pass som passar dig!
+            {t('myBookings.noBookingsText')}
           </p>
           <Link to="/" className="btn btn-primary btn-lg mt-3">
-            Bläddra bland pass
+            {t('myBookings.browseClasses')}
           </Link>
         </div>
       ) : (
@@ -135,7 +150,7 @@ const MyBookingsPage = () => {
 
               <div className="class-card-body">
                 <div className="booked-badge">
-                  <span>✓</span> Bokad {getTimeUntil(booking.class.scheduledAt)}
+                  <span>✓</span> {t('myBookings.booked')} {getTimeUntil(booking.class.scheduledAt)}
                 </div>
 
                 {booking.class.description && (
@@ -155,7 +170,7 @@ const MyBookingsPage = () => {
                   </div>
                   <div className="class-card-meta-item">
                     <span>⏱️</span>
-                    <span>{booking.class.durationMinutes} min</span>
+                    <span>{booking.class.durationMinutes} {t('classes.minutes')}</span>
                   </div>
                 </div>
               </div>
@@ -169,12 +184,12 @@ const MyBookingsPage = () => {
                   {cancellingId === booking.class.id ? (
                     <>
                       <span className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }}></span>
-                      Avbokar...
+                      {t('classes.cancelling')}
                     </>
                   ) : (
                     <>
                       <span>✕</span>
-                      Avboka
+                      {t('classes.cancelButton')}
                     </>
                   )}
                 </button>

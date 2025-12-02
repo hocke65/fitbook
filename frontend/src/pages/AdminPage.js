@@ -1,8 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { classesApi, bookingsApi, usersApi } from '../services/api';
+import { useLanguage } from '../context/LanguageContext';
 import Modal from '../components/Modal';
 
 const AdminPage = () => {
+  const { language, t } = useLanguage();
+
   // Tab state
   const [activeTab, setActiveTab] = useState('classes');
 
@@ -49,11 +52,11 @@ const AdminPage = () => {
       const response = await classesApi.getAll();
       setClasses(response.data.classes);
     } catch (err) {
-      setError('Kunde inte hämta träningspass.');
+      setError(t('errors.fetchClasses'));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   const fetchUsers = useCallback(async () => {
     setUsersLoading(true);
@@ -61,11 +64,11 @@ const AdminPage = () => {
       const response = await usersApi.getAll();
       setUsers(response.data.users);
     } catch (err) {
-      setError('Kunde inte hämta användare.');
+      setError(t('errors.fetchUsers'));
     } finally {
       setUsersLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     fetchClasses();
@@ -85,7 +88,7 @@ const AdminPage = () => {
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('sv-SE', {
+    return date.toLocaleDateString(language === 'sv' ? 'sv-SE' : 'en-US', {
       weekday: 'short',
       month: 'short',
       day: 'numeric',
@@ -141,10 +144,10 @@ const AdminPage = () => {
     try {
       if (editingClass) {
         await classesApi.update(editingClass.id, formData);
-        setSuccess('Passet har uppdaterats!');
+        setSuccess(t('admin.classUpdated'));
       } else {
         await classesApi.create(formData);
-        setSuccess('Nytt pass har skapats!');
+        setSuccess(t('admin.classCreated'));
       }
       setShowModal(false);
       fetchClasses();
@@ -153,7 +156,7 @@ const AdminPage = () => {
       setFormError(
         err.response?.data?.error ||
         err.response?.data?.errors?.[0]?.msg ||
-        'Något gick fel.'
+        t('errors.generic')
       );
     } finally {
       setFormLoading(false);
@@ -161,17 +164,17 @@ const AdminPage = () => {
   };
 
   const handleDelete = async (classId, title) => {
-    if (!window.confirm(`Är du säker på att du vill ta bort "${title}"?`)) {
+    if (!window.confirm(t('admin.confirmDeleteClass').replace('{title}', title))) {
       return;
     }
 
     try {
       await classesApi.delete(classId);
-      setSuccess('Passet har tagits bort!');
+      setSuccess(t('admin.classDeleted'));
       fetchClasses();
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
-      setError(err.response?.data?.error || 'Kunde inte ta bort passet.');
+      setError(err.response?.data?.error || t('errors.deleteClass'));
       setTimeout(() => setError(''), 3000);
     }
   };
@@ -183,7 +186,7 @@ const AdminPage = () => {
       setSelectedClassName(className);
       setShowParticipants(true);
     } catch (err) {
-      setError('Kunde inte hämta deltagare.');
+      setError(t('errors.fetchParticipants'));
       setTimeout(() => setError(''), 3000);
     }
   };
@@ -230,17 +233,17 @@ const AdminPage = () => {
 
     try {
       const dataToSend = { ...userFormData };
-      // Ta bort tomt lösenord vid redigering
+      // Remove empty password when editing
       if (editingUser && !dataToSend.password) {
         delete dataToSend.password;
       }
 
       if (editingUser) {
         await usersApi.update(editingUser.id, dataToSend);
-        setSuccess('Användaren har uppdaterats!');
+        setSuccess(t('admin.userUpdated'));
       } else {
         await usersApi.create(dataToSend);
-        setSuccess('Ny användare har skapats!');
+        setSuccess(t('admin.userCreated'));
       }
       setShowUserModal(false);
       fetchUsers();
@@ -249,7 +252,7 @@ const AdminPage = () => {
       setUserFormError(
         err.response?.data?.error ||
         err.response?.data?.errors?.[0]?.msg ||
-        'Något gick fel.'
+        t('errors.generic')
       );
     } finally {
       setUserFormLoading(false);
@@ -257,17 +260,17 @@ const AdminPage = () => {
   };
 
   const handleDeleteUser = async (userId, name) => {
-    if (!window.confirm(`Är du säker på att du vill ta bort "${name}"? Alla bokningar för användaren kommer också att tas bort.`)) {
+    if (!window.confirm(t('admin.confirmDeleteUser').replace('{name}', name))) {
       return;
     }
 
     try {
       await usersApi.delete(userId);
-      setSuccess('Användaren har tagits bort!');
+      setSuccess(t('admin.userDeleted'));
       fetchUsers();
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
-      setError(err.response?.data?.error || 'Kunde inte ta bort användaren.');
+      setError(err.response?.data?.error || t('errors.deleteUser'));
       setTimeout(() => setError(''), 3000);
     }
   };
@@ -281,7 +284,7 @@ const AdminPage = () => {
     return (
       <div className="loading">
         <div className="spinner"></div>
-        <p className="loading-text">Laddar...</p>
+        <p className="loading-text">{t('common.loading')}</p>
       </div>
     );
   }
@@ -290,8 +293,8 @@ const AdminPage = () => {
     <div className="container page">
       <div className="admin-header">
         <div>
-          <h1 className="page-title">Admin Dashboard</h1>
-          <p className="page-subtitle">Hantera träningspass och användare</p>
+          <h1 className="page-title">{t('admin.title')}</h1>
+          <p className="page-subtitle">{t('admin.subtitle')}</p>
         </div>
       </div>
 
@@ -301,13 +304,13 @@ const AdminPage = () => {
           className={`admin-tab ${activeTab === 'classes' ? 'active' : ''}`}
           onClick={() => setActiveTab('classes')}
         >
-          <span>📅</span> Träningspass
+          <span>📅</span> {t('admin.tabClasses')}
         </button>
         <button
           className={`admin-tab ${activeTab === 'users' ? 'active' : ''}`}
           onClick={() => setActiveTab('users')}
         >
-          <span>👥</span> Användare
+          <span>👥</span> {t('admin.tabUsers')}
         </button>
       </div>
 
@@ -329,40 +332,40 @@ const AdminPage = () => {
           <div className="admin-stats">
             <div className="stat-card">
               <div className="stat-value">{classes.length}</div>
-              <div className="stat-label">Aktiva pass</div>
+              <div className="stat-label">{t('admin.activeClasses')}</div>
             </div>
             <div className="stat-card">
               <div className="stat-value">{totalBookings}</div>
-              <div className="stat-label">Totalt bokade</div>
+              <div className="stat-label">{t('admin.totalBooked')}</div>
             </div>
             <div className="stat-card">
               <div className="stat-value">{totalCapacity}</div>
-              <div className="stat-label">Total kapacitet</div>
+              <div className="stat-label">{t('admin.totalCapacity')}</div>
             </div>
             <div className="stat-card">
               <div className="stat-value">
                 {totalCapacity > 0 ? Math.round((totalBookings / totalCapacity) * 100) : 0}%
               </div>
-              <div className="stat-label">Beläggning</div>
+              <div className="stat-label">{t('admin.occupancy')}</div>
             </div>
           </div>
 
           <div className="section-header">
-            <h2>Träningspass</h2>
+            <h2>{t('admin.tabClasses')}</h2>
             <button onClick={openCreateModal} className="btn btn-primary">
-              <span>+</span> Skapa nytt pass
+              <span>+</span> {t('admin.createClass')}
             </button>
           </div>
 
           {classes.length === 0 ? (
             <div className="empty-state">
               <div className="empty-state-icon">📅</div>
-              <h2 className="empty-state-title">Inga pass</h2>
+              <h2 className="empty-state-title">{t('admin.noClasses')}</h2>
               <p className="empty-state-text">
-                Skapa ditt första träningspass!
+                {t('admin.noClassesText')}
               </p>
               <button onClick={openCreateModal} className="btn btn-primary btn-lg mt-3">
-                Skapa pass
+                {t('admin.createClassButton')}
               </button>
             </div>
           ) : (
@@ -370,11 +373,11 @@ const AdminPage = () => {
               <table className="table">
                 <thead>
                   <tr>
-                    <th>Pass</th>
-                    <th>Datum/Tid</th>
-                    <th style={{ textAlign: 'center' }}>Bokade</th>
-                    <th style={{ textAlign: 'center' }}>Kapacitet</th>
-                    <th style={{ textAlign: 'right' }}>Åtgärder</th>
+                    <th>{t('admin.tableClass')}</th>
+                    <th>{t('admin.tableDateTime')}</th>
+                    <th style={{ textAlign: 'center' }}>{t('admin.tableBooked')}</th>
+                    <th style={{ textAlign: 'center' }}>{t('admin.tableCapacity')}</th>
+                    <th style={{ textAlign: 'right' }}>{t('admin.tableActions')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -442,21 +445,21 @@ const AdminPage = () => {
                             <button
                               onClick={() => viewParticipants(c.id, c.title)}
                               className="btn btn-ghost btn-sm"
-                              title="Visa deltagare"
+                              title={t('admin.viewParticipants')}
                             >
                               👥
                             </button>
                             <button
                               onClick={() => openEditModal(c)}
                               className="btn btn-ghost btn-sm"
-                              title="Redigera"
+                              title={t('common.edit')}
                             >
                               ✏️
                             </button>
                             <button
                               onClick={() => handleDelete(c.id, c.title)}
                               className="btn btn-ghost btn-sm"
-                              title="Ta bort"
+                              title={t('common.delete')}
                               style={{ color: 'var(--danger)' }}
                             >
                               🗑️
@@ -480,45 +483,45 @@ const AdminPage = () => {
           <div className="admin-stats">
             <div className="stat-card">
               <div className="stat-value">{users.length}</div>
-              <div className="stat-label">Totalt användare</div>
+              <div className="stat-label">{t('admin.totalUsers')}</div>
             </div>
             <div className="stat-card">
               <div className="stat-value">{adminCount}</div>
-              <div className="stat-label">Administratörer</div>
+              <div className="stat-label">{t('admin.administrators')}</div>
             </div>
             <div className="stat-card">
               <div className="stat-value">{userCount}</div>
-              <div className="stat-label">Vanliga användare</div>
+              <div className="stat-label">{t('admin.regularUsers')}</div>
             </div>
             <div className="stat-card">
               <div className="stat-value">
                 {users.reduce((acc, u) => acc + (u.bookingCount || 0), 0)}
               </div>
-              <div className="stat-label">Aktiva bokningar</div>
+              <div className="stat-label">{t('admin.activeBookings')}</div>
             </div>
           </div>
 
           <div className="section-header">
-            <h2>Användare</h2>
+            <h2>{t('admin.tabUsers')}</h2>
             <button onClick={openCreateUserModal} className="btn btn-primary">
-              <span>+</span> Skapa ny användare
+              <span>+</span> {t('admin.createUser')}
             </button>
           </div>
 
           {usersLoading ? (
             <div className="loading">
               <div className="spinner"></div>
-              <p className="loading-text">Laddar användare...</p>
+              <p className="loading-text">{t('admin.loadingUsers')}</p>
             </div>
           ) : users.length === 0 ? (
             <div className="empty-state">
               <div className="empty-state-icon">👥</div>
-              <h2 className="empty-state-title">Inga användare</h2>
+              <h2 className="empty-state-title">{t('admin.noUsers')}</h2>
               <p className="empty-state-text">
-                Skapa din första användare!
+                {t('admin.noUsersText')}
               </p>
               <button onClick={openCreateUserModal} className="btn btn-primary btn-lg mt-3">
-                Skapa användare
+                {t('admin.createUserButton')}
               </button>
             </div>
           ) : (
@@ -526,11 +529,11 @@ const AdminPage = () => {
               <table className="table">
                 <thead>
                   <tr>
-                    <th>Användare</th>
-                    <th>E-post</th>
-                    <th style={{ textAlign: 'center' }}>Roll</th>
-                    <th style={{ textAlign: 'center' }}>Bokningar</th>
-                    <th style={{ textAlign: 'right' }}>Åtgärder</th>
+                    <th>{t('admin.tableUser')}</th>
+                    <th>{t('auth.email')}</th>
+                    <th style={{ textAlign: 'center' }}>{t('admin.tableRole')}</th>
+                    <th style={{ textAlign: 'center' }}>{t('admin.tableBookings')}</th>
+                    <th style={{ textAlign: 'right' }}>{t('admin.tableActions')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -546,7 +549,7 @@ const AdminPage = () => {
                               {user.firstName} {user.lastName}
                             </div>
                             <div style={{ fontSize: '0.75rem', color: 'var(--gray-500)' }}>
-                              Medlem sedan {new Date(user.createdAt).toLocaleDateString('sv-SE')}
+                              {t('admin.memberSince')} {new Date(user.createdAt).toLocaleDateString(language === 'sv' ? 'sv-SE' : 'en-US')}
                             </div>
                           </div>
                         </div>
@@ -554,7 +557,7 @@ const AdminPage = () => {
                       <td>{user.email}</td>
                       <td style={{ textAlign: 'center' }}>
                         <span className={`role-badge ${user.role}`}>
-                          {user.role === 'admin' ? '👑 Admin' : '👤 Användare'}
+                          {user.role === 'admin' ? `👑 ${t('admin.roleAdmin')}` : `👤 ${t('admin.roleUser')}`}
                         </span>
                       </td>
                       <td style={{ textAlign: 'center' }}>
@@ -574,14 +577,14 @@ const AdminPage = () => {
                           <button
                             onClick={() => openEditUserModal(user)}
                             className="btn btn-ghost btn-sm"
-                            title="Redigera"
+                            title={t('common.edit')}
                           >
                             ✏️
                           </button>
                           <button
                             onClick={() => handleDeleteUser(user.id, `${user.firstName} ${user.lastName}`)}
                             className="btn btn-ghost btn-sm"
-                            title="Ta bort"
+                            title={t('common.delete')}
                             style={{ color: 'var(--danger)' }}
                           >
                             🗑️
@@ -601,7 +604,7 @@ const AdminPage = () => {
       <Modal
         isOpen={showModal}
         onClose={() => setShowModal(false)}
-        title={editingClass ? 'Redigera pass' : 'Skapa nytt pass'}
+        title={editingClass ? t('admin.editClass') : t('admin.createClass')}
       >
         <form onSubmit={handleSubmit}>
           {formError && (
@@ -612,7 +615,7 @@ const AdminPage = () => {
 
           <div className="form-group">
             <label htmlFor="title" className="form-label">
-              Titel *
+              {t('admin.classTitle')} *
             </label>
             <input
               type="text"
@@ -621,14 +624,14 @@ const AdminPage = () => {
               className="form-input"
               value={formData.title}
               onChange={handleFormChange}
-              placeholder="T.ex. Yoga för nybörjare"
+              placeholder={t('admin.classTitlePlaceholder')}
               required
             />
           </div>
 
           <div className="form-group">
             <label htmlFor="description" className="form-label">
-              Beskrivning
+              {t('admin.classDescription')}
             </label>
             <textarea
               id="description"
@@ -636,13 +639,13 @@ const AdminPage = () => {
               className="form-input form-textarea"
               value={formData.description}
               onChange={handleFormChange}
-              placeholder="Beskriv passet..."
+              placeholder={t('admin.classDescriptionPlaceholder')}
             />
           </div>
 
           <div className="form-group">
             <label htmlFor="instructor" className="form-label">
-              Instruktör
+              {t('admin.instructor')}
             </label>
             <input
               type="text"
@@ -651,13 +654,13 @@ const AdminPage = () => {
               className="form-input"
               value={formData.instructor}
               onChange={handleFormChange}
-              placeholder="Instruktörens namn"
+              placeholder={t('admin.instructorPlaceholder')}
             />
           </div>
 
           <div className="form-group">
             <label htmlFor="scheduledAt" className="form-label">
-              Datum och tid *
+              {t('admin.dateTime')} *
             </label>
             <input
               type="datetime-local"
@@ -673,7 +676,7 @@ const AdminPage = () => {
           <div className="form-row">
             <div className="form-group">
               <label htmlFor="maxCapacity" className="form-label">
-                Max antal platser *
+                {t('admin.maxCapacity')} *
               </label>
               <input
                 type="number"
@@ -689,7 +692,7 @@ const AdminPage = () => {
 
             <div className="form-group">
               <label htmlFor="durationMinutes" className="form-label">
-                Längd (minuter) *
+                {t('admin.duration')} *
               </label>
               <input
                 type="number"
@@ -711,7 +714,7 @@ const AdminPage = () => {
               onClick={() => setShowModal(false)}
               className="btn btn-secondary"
             >
-              Avbryt
+              {t('common.cancel')}
             </button>
             <button
               type="submit"
@@ -721,12 +724,12 @@ const AdminPage = () => {
               {formLoading ? (
                 <>
                   <span className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }}></span>
-                  Sparar...
+                  {t('common.saving')}
                 </>
               ) : editingClass ? (
-                'Uppdatera'
+                t('common.update')
               ) : (
-                'Skapa pass'
+                t('admin.createClassButton')
               )}
             </button>
           </div>
@@ -737,17 +740,17 @@ const AdminPage = () => {
       <Modal
         isOpen={showParticipants}
         onClose={() => setShowParticipants(false)}
-        title={`Deltagare - ${selectedClassName}`}
+        title={`${t('admin.participants')} - ${selectedClassName}`}
       >
         {participants.length === 0 ? (
           <div className="empty-state" style={{ padding: '2rem' }}>
             <div className="empty-state-icon">👥</div>
-            <p className="text-muted">Inga bokningar ännu.</p>
+            <p className="text-muted">{t('admin.noBookingsYet')}</p>
           </div>
         ) : (
           <div>
             <p className="mb-2 text-muted">
-              {participants.length} bokade {participants.length === 1 ? 'deltagare' : 'deltagare'}
+              {participants.length} {t('admin.bookedParticipants')}
             </p>
             {participants.map((p, index) => (
               <div
@@ -768,7 +771,7 @@ const AdminPage = () => {
                     {p.firstName} {p.lastName}
                   </div>
                   <div style={{ fontSize: '0.75rem', color: 'var(--gray-500)' }}>
-                    Bokad {new Date(p.bookedAt).toLocaleString('sv-SE')}
+                    {t('admin.bookedAt')} {new Date(p.bookedAt).toLocaleString(language === 'sv' ? 'sv-SE' : 'en-US')}
                   </div>
                 </div>
               </div>
@@ -781,7 +784,7 @@ const AdminPage = () => {
       <Modal
         isOpen={showUserModal}
         onClose={() => setShowUserModal(false)}
-        title={editingUser ? 'Redigera användare' : 'Skapa ny användare'}
+        title={editingUser ? t('admin.editUser') : t('admin.createUser')}
       >
         <form onSubmit={handleUserSubmit}>
           {userFormError && (
@@ -793,7 +796,7 @@ const AdminPage = () => {
           <div className="form-row">
             <div className="form-group">
               <label htmlFor="userFirstName" className="form-label">
-                Förnamn *
+                {t('auth.firstName')} *
               </label>
               <input
                 type="text"
@@ -802,14 +805,14 @@ const AdminPage = () => {
                 className="form-input"
                 value={userFormData.firstName}
                 onChange={handleUserFormChange}
-                placeholder="Förnamn"
+                placeholder={t('auth.firstName')}
                 required
               />
             </div>
 
             <div className="form-group">
               <label htmlFor="userLastName" className="form-label">
-                Efternamn *
+                {t('auth.lastName')} *
               </label>
               <input
                 type="text"
@@ -818,7 +821,7 @@ const AdminPage = () => {
                 className="form-input"
                 value={userFormData.lastName}
                 onChange={handleUserFormChange}
-                placeholder="Efternamn"
+                placeholder={t('auth.lastName')}
                 required
               />
             </div>
@@ -826,7 +829,7 @@ const AdminPage = () => {
 
           <div className="form-group">
             <label htmlFor="userEmail" className="form-label">
-              E-postadress *
+              {t('auth.email')} *
             </label>
             <input
               type="email"
@@ -835,14 +838,14 @@ const AdminPage = () => {
               className="form-input"
               value={userFormData.email}
               onChange={handleUserFormChange}
-              placeholder="namn@example.com"
+              placeholder={t('admin.emailPlaceholder')}
               required
             />
           </div>
 
           <div className="form-group">
             <label htmlFor="userPassword" className="form-label">
-              {editingUser ? 'Nytt lösenord (lämna tomt för att behålla)' : 'Lösenord *'}
+              {editingUser ? t('admin.newPassword') : `${t('auth.password')} *`}
             </label>
             <input
               type="password"
@@ -851,7 +854,7 @@ const AdminPage = () => {
               className="form-input"
               value={userFormData.password}
               onChange={handleUserFormChange}
-              placeholder={editingUser ? '••••••••' : 'Minst 6 tecken'}
+              placeholder={editingUser ? '••••••••' : t('admin.passwordPlaceholder')}
               required={!editingUser}
               minLength={editingUser ? 0 : 6}
             />
@@ -859,7 +862,7 @@ const AdminPage = () => {
 
           <div className="form-group">
             <label htmlFor="userRole" className="form-label">
-              Roll
+              {t('admin.tableRole')}
             </label>
             <select
               id="userRole"
@@ -868,8 +871,8 @@ const AdminPage = () => {
               value={userFormData.role}
               onChange={handleUserFormChange}
             >
-              <option value="user">Användare</option>
-              <option value="admin">Administratör</option>
+              <option value="user">{t('admin.roleUser')}</option>
+              <option value="admin">{t('admin.roleAdminOption')}</option>
             </select>
           </div>
 
@@ -879,7 +882,7 @@ const AdminPage = () => {
               onClick={() => setShowUserModal(false)}
               className="btn btn-secondary"
             >
-              Avbryt
+              {t('common.cancel')}
             </button>
             <button
               type="submit"
@@ -889,12 +892,12 @@ const AdminPage = () => {
               {userFormLoading ? (
                 <>
                   <span className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }}></span>
-                  Sparar...
+                  {t('common.saving')}
                 </>
               ) : editingUser ? (
-                'Uppdatera'
+                t('common.update')
               ) : (
-                'Skapa användare'
+                t('admin.createUserButton')
               )}
             </button>
           </div>

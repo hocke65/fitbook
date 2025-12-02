@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -9,6 +10,7 @@ const LoginPage = () => {
   const [loading, setLoading] = useState(false);
 
   const { login } = useAuth();
+  const { language, toggleLanguage, t } = useLanguage();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -23,7 +25,7 @@ const LoginPage = () => {
       setError(
         err.response?.data?.error ||
         err.response?.data?.errors?.[0]?.msg ||
-        'Inloggningen misslyckades. Försök igen.'
+        t('errors.loginFailed')
       );
     } finally {
       setLoading(false);
@@ -33,13 +35,21 @@ const LoginPage = () => {
   return (
     <div className="auth-page">
       <div className="auth-card">
+        <button
+          className="language-toggle auth-language-toggle"
+          onClick={toggleLanguage}
+          title={language === 'sv' ? 'Switch to English' : 'Byt till svenska'}
+        >
+          {language === 'sv' ? '🇬🇧 EN' : '🇸🇪 SV'}
+        </button>
+
         <div className="auth-logo">
           <h1>💪 FitBook</h1>
-          <p>Boka dina träningspass enkelt</p>
+          <p>{language === 'sv' ? 'Boka dina träningspass enkelt' : 'Book your fitness classes easily'}</p>
         </div>
 
-        <h2 className="auth-title">Välkommen tillbaka!</h2>
-        <p className="auth-subtitle">Logga in för att fortsätta</p>
+        <h2 className="auth-title">{t('auth.loginSubtitle')}</h2>
+        <p className="auth-subtitle">{t('auth.loginTitle')}</p>
 
         {error && (
           <div className="alert alert-error">
@@ -50,7 +60,7 @@ const LoginPage = () => {
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-group">
             <label htmlFor="email" className="form-label">
-              E-postadress
+              {t('auth.email')}
             </label>
             <input
               type="email"
@@ -58,7 +68,7 @@ const LoginPage = () => {
               className="form-input"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="din@email.se"
+              placeholder={language === 'sv' ? 'din@email.se' : 'your@email.com'}
               required
               autoComplete="email"
             />
@@ -66,7 +76,7 @@ const LoginPage = () => {
 
           <div className="form-group">
             <label htmlFor="password" className="form-label">
-              Lösenord
+              {t('auth.password')}
             </label>
             <input
               type="password"
@@ -88,18 +98,18 @@ const LoginPage = () => {
             {loading ? (
               <>
                 <span className="spinner" style={{ width: 20, height: 20, borderWidth: 2 }}></span>
-                Loggar in...
+                {t('auth.loggingIn')}
               </>
             ) : (
-              'Logga in'
+              t('auth.loginButton')
             )}
           </button>
         </form>
 
         <div className="auth-footer">
           <p>
-            Har du inget konto?{' '}
-            <Link to="/register">Skapa konto gratis</Link>
+            {t('auth.noAccount')}{' '}
+            <Link to="/register">{t('auth.createAccount')}</Link>
           </p>
         </div>
       </div>

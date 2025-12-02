@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { LanguageProvider, useLanguage } from './context/LanguageContext';
 import Header from './components/Header';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -11,12 +12,13 @@ import AdminPage from './pages/AdminPage';
 // Protected Route komponent
 const ProtectedRoute = ({ children, adminOnly = false }) => {
   const { isAuthenticated, isAdmin, loading } = useAuth();
+  const { t } = useLanguage();
 
   if (loading) {
     return (
       <div className="loading">
         <div className="spinner"></div>
-        <p className="loading-text">Laddar...</p>
+        <p className="loading-text">{t('common.loading')}</p>
       </div>
     );
   }
@@ -35,12 +37,13 @@ const ProtectedRoute = ({ children, adminOnly = false }) => {
 // Public Route - omdirigera om redan inloggad
 const PublicRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
+  const { t } = useLanguage();
 
   if (loading) {
     return (
       <div className="loading">
         <div className="spinner"></div>
-        <p className="loading-text">Laddar...</p>
+        <p className="loading-text">{t('common.loading')}</p>
       </div>
     );
   }
@@ -64,8 +67,9 @@ const AppLayout = ({ children }) => {
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
+    <LanguageProvider>
+      <AuthProvider>
+        <Router>
         <Routes>
           {/* Public routes */}
           <Route
@@ -120,8 +124,9 @@ function App() {
           {/* Catch all - redirect to home */}
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
-      </Router>
-    </AuthProvider>
+        </Router>
+      </AuthProvider>
+    </LanguageProvider>
   );
 }
 

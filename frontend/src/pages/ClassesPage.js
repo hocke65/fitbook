@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { classesApi, bookingsApi } from '../services/api';
+import { useLanguage } from '../context/LanguageContext';
 import ClassCard from '../components/ClassCard';
 
 const ClassesPage = () => {
@@ -7,6 +8,8 @@ const ClassesPage = () => {
   const [myBookings, setMyBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  const { t } = useLanguage();
 
   const fetchData = useCallback(async () => {
     try {
@@ -17,12 +20,12 @@ const ClassesPage = () => {
       setClasses(classesRes.data.classes);
       setMyBookings(bookingsRes.data.bookings);
     } catch (err) {
-      setError('Kunde inte hämta träningspass.');
+      setError(t('errors.fetchClasses'));
       console.error(err);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     fetchData();
@@ -40,7 +43,7 @@ const ClassesPage = () => {
     return (
       <div className="loading">
         <div className="spinner"></div>
-        <p className="loading-text">Laddar träningspass...</p>
+        <p className="loading-text">{t('common.loading')}</p>
       </div>
     );
   }
@@ -60,10 +63,10 @@ const ClassesPage = () => {
       <div className="page-header">
         <div className="flex-between flex-wrap gap-2">
           <div>
-            <h1 className="page-title">Träningspass</h1>
+            <h1 className="page-title">{t('classes.title')}</h1>
             <p className="page-subtitle">
-              {classes.length} pass tillgängliga
-              {bookedClassesCount > 0 && ` • ${bookedClassesCount} bokade`}
+              {classes.length} {t('classes.available')}
+              {bookedClassesCount > 0 && ` • ${bookedClassesCount} ${t('classes.booked')}`}
             </p>
           </div>
         </div>
@@ -72,9 +75,9 @@ const ClassesPage = () => {
       {classes.length === 0 ? (
         <div className="empty-state">
           <div className="empty-state-icon">📅</div>
-          <h2 className="empty-state-title">Inga pass tillgängliga</h2>
+          <h2 className="empty-state-title">{t('classes.noClasses')}</h2>
           <p className="empty-state-text">
-            Just nu finns inga kommande träningspass schemalagda. Kom tillbaka senare!
+            {t('classes.noClassesText')}
           </p>
         </div>
       ) : (

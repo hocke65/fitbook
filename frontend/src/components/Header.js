@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 
 const Header = () => {
   const { user, logout, isAdmin } = useAuth();
+  const { language, toggleLanguage, t } = useLanguage();
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -57,14 +59,14 @@ const Header = () => {
             className={`nav-link ${isActive('/') ? 'active' : ''}`}
             onClick={closeMobileMenu}
           >
-            Träningspass
+            {t('nav.classes')}
           </Link>
           <Link
             to="/my-bookings"
             className={`nav-link ${isActive('/my-bookings') ? 'active' : ''}`}
             onClick={closeMobileMenu}
           >
-            Mina Bokningar
+            {t('nav.myBookings')}
           </Link>
           {isAdmin() && (
             <Link
@@ -72,12 +74,19 @@ const Header = () => {
               className={`nav-link ${isActive('/admin') ? 'active' : ''}`}
               onClick={closeMobileMenu}
             >
-              Admin
+              {t('nav.admin')}
             </Link>
           )}
         </nav>
 
         <div className={`user-section ${mobileMenuOpen ? 'active' : ''}`}>
+          <button
+            className="language-toggle"
+            onClick={toggleLanguage}
+            title={language === 'sv' ? 'Switch to English' : 'Byt till svenska'}
+          >
+            {language === 'sv' ? '🇬🇧 EN' : '🇸🇪 SV'}
+          </button>
           <div className="user-info">
             <div className="user-avatar">
               {getInitials()}
@@ -86,11 +95,11 @@ const Header = () => {
               <span className="user-name">
                 {user?.firstName} {user?.lastName}
               </span>
-              {isAdmin() && <span className="user-role">Administratör</span>}
+              {isAdmin() && <span className="user-role">{t('admin.roleAdmin')}</span>}
             </div>
           </div>
           <button onClick={handleLogout} className="btn btn-secondary btn-sm">
-            Logga ut
+            {t('nav.logout')}
           </button>
         </div>
       </div>

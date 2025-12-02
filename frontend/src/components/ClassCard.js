@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { bookingsApi } from '../services/api';
+import { useLanguage } from '../context/LanguageContext';
 
 const ClassCard = ({
   classData,
@@ -12,6 +13,8 @@ const ClassCard = ({
   const [participants, setParticipants] = useState([]);
   const [loadingParticipants, setLoadingParticipants] = useState(false);
 
+  const { language, t } = useLanguage();
+
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     const today = new Date();
@@ -19,12 +22,12 @@ const ClassCard = ({
     tomorrow.setDate(tomorrow.getDate() + 1);
 
     if (date.toDateString() === today.toDateString()) {
-      return 'Idag';
+      return t('classes.today');
     } else if (date.toDateString() === tomorrow.toDateString()) {
-      return 'Imorgon';
+      return t('classes.tomorrow');
     }
 
-    return date.toLocaleDateString('sv-SE', {
+    return date.toLocaleDateString(language === 'sv' ? 'sv-SE' : 'en-US', {
       weekday: 'short',
       day: 'numeric',
       month: 'short',
@@ -33,7 +36,7 @@ const ClassCard = ({
 
   const formatTime = (dateString) => {
     const date = new Date(dateString);
-    return date.toLocaleTimeString('sv-SE', {
+    return date.toLocaleTimeString(language === 'sv' ? 'sv-SE' : 'en-US', {
       hour: '2-digit',
       minute: '2-digit',
     });
@@ -46,12 +49,11 @@ const ClassCard = ({
     try {
       await bookingsApi.book(classData.id);
       if (onBookingChange) onBookingChange();
-      // Uppdatera deltagarlistan om den visas
       if (showParticipants) {
         fetchParticipants();
       }
     } catch (err) {
-      setError(err.response?.data?.error || 'Kunde inte boka passet.');
+      setError(err.response?.data?.error || t('errors.bookingFailed'));
     } finally {
       setLoading(false);
     }
@@ -64,12 +66,11 @@ const ClassCard = ({
     try {
       await bookingsApi.cancel(classData.id);
       if (onBookingChange) onBookingChange();
-      // Uppdatera deltagarlistan om den visas
       if (showParticipants) {
         fetchParticipants();
       }
     } catch (err) {
-      setError(err.response?.data?.error || 'Kunde inte avboka passet.');
+      setError(err.response?.data?.error || t('errors.cancelFailed'));
     } finally {
       setLoading(false);
     }
@@ -81,7 +82,7 @@ const ClassCard = ({
       const response = await bookingsApi.getClassParticipants(classData.id);
       setParticipants(response.data.participants);
     } catch (err) {
-      console.error('Kunde inte hämta deltagare:', err);
+      console.error('Could not fetch participants:', err);
     } finally {
       setLoadingParticipants(false);
     }
@@ -116,7 +117,7 @@ const ClassCard = ({
       <div className="class-card-body">
         {isBooked && (
           <div className="booked-badge">
-            <span>✓</span> Du är bokad
+            <span>✓</span> {t('classes.youAreBooked')}
           </div>
         )}
 
@@ -135,11 +136,10 @@ const ClassCard = ({
           </div>
           <div className="class-card-meta-item">
             <span>⏱️</span>
-            <span>{classData.durationMinutes} min</span>
+            <span>{classData.durationMinutes} {t('classes.minutes')}</span>
           </div>
         </div>
 
-        {/* Klickbar plats-sektion för att visa deltagare */}
         <div
           className="class-card-spots clickable"
           onClick={toggleParticipants}
@@ -149,10 +149,10 @@ const ClassCard = ({
         >
           <div className="spots-info">
             <span className="spots-label">
-              <span>👥</span> {bookedCount} bokade
+              <span>👥</span> {bookedCount} {t('classes.spotsBooked')}
             </span>
             <span className={`spots-count ${isFull ? 'full' : 'available'}`}>
-              {classData.availableSpots} lediga
+              {classData.availableSpots} {t('classes.spotsAvailable')}
             </span>
           </div>
           <div className="spots-bar">
@@ -169,24 +169,23 @@ const ClassCard = ({
             ></div>
           </div>
           <div className="spots-expand-hint">
-            <span>{showParticipants ? '▲ Dölj deltagare' : '▼ Visa deltagare'}</span>
+            <span>{showParticipants ? `▲ ${t('classes.hideParticipants')}` : `▼ ${t('classes.showParticipants')}`}</span>
           </div>
         </div>
 
-        {/* Deltagarlista */}
         {showParticipants && (
           <div className="participants-list">
             {loadingParticipants ? (
               <div className="participants-loading">
                 <span className="spinner" style={{ width: 20, height: 20, borderWidth: 2 }}></span>
-                <span>Laddar deltagare...</span>
+                <span>{t('classes.loadingParticipants')}</span>
               </div>
             ) : participants.length === 0 ? (
-              <p className="participants-empty">Inga bokade deltagare ännu</p>
+              <p className="participants-empty">{t('classes.noParticipants')}</p>
             ) : (
               <>
                 <p className="participants-header">
-                  Bokade deltagare ({participants.length})
+                  {t('classes.participants')} ({participants.length})
                 </p>
                 <div className="participants-grid">
                   {participants.map((p) => (
@@ -222,12 +221,12 @@ const ClassCard = ({
             {loading ? (
               <>
                 <span className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }}></span>
-                Avbokar...
+                {t('classes.cancelling')}
               </>
             ) : (
               <>
                 <span>✕</span>
-                Avboka
+                {t('classes.cancelButton')}
               </>
             )}
           </button>
@@ -240,17 +239,17 @@ const ClassCard = ({
             {loading ? (
               <>
                 <span className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }}></span>
-                Bokar...
+                {t('classes.booking')}
               </>
             ) : isFull ? (
               <>
                 <span>🚫</span>
-                Fullbokat
+                {t('classes.fullyBooked')}
               </>
             ) : (
               <>
                 <span>✓</span>
-                Boka pass
+                {t('classes.bookButton')}
               </>
             )}
           </button>
