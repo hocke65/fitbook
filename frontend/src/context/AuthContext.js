@@ -32,6 +32,26 @@ export const AuthProvider = ({ children }) => {
     initAuth();
   }, []);
 
+  // Login with Microsoft Entra ID
+  const loginWithEntraId = async (accessToken, account) => {
+    try {
+      const response = await api.post('/auth/entra-login', {
+        accessToken,
+        account: {
+          name: account.name,
+          username: account.username,
+          localAccountId: account.localAccountId,
+        },
+      });
+      const { user, token } = response.data;
+      localStorage.setItem('token', token);
+      setUser(user);
+      return user;
+    } catch (error) {
+      throw error;
+    }
+  };
+
   const login = async (email, password) => {
     const response = await api.post('/auth/login', { email, password });
     const { user, token } = response.data;
@@ -61,6 +81,7 @@ export const AuthProvider = ({ children }) => {
     user,
     loading,
     login,
+    loginWithEntraId,
     register,
     logout,
     isAdmin,

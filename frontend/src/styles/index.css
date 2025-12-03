@@ -953,6 +953,54 @@ body {
   margin-top: 0.5rem;
 }
 
+/* Auth Divider */
+.auth-divider {
+  display: flex;
+  align-items: center;
+  margin: 1.5rem 0;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--gray-200);
+}
+
+.auth-divider span {
+  padding: 0 1rem;
+  color: var(--gray-500);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+/* Microsoft Login Button */
+.btn-microsoft {
+  width: 100%;
+  background: var(--white);
+  border: 2px solid var(--gray-200);
+  color: var(--gray-700);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.btn-microsoft:hover:not(:disabled) {
+  background: var(--gray-50);
+  border-color: var(--gray-300);
+}
+
+.btn-microsoft:disabled {
+  opacity: 0.6;
+}
+
+.microsoft-icon {
+  width: 20px;
+  height: 20px;
+}
+
 .auth-footer {
   text-align: center;
   margin-top: 2rem;

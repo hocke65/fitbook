@@ -1,15 +1,19 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useMsal } from '@azure/msal-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
+import { loginRequest } from '../config/msalConfig';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [msLoading, setMsLoading] = useState(false);
 
-  const { login } = useAuth();
+  const { login, loginWithEntraId } = useAuth();
+  const { instance } = useMsal();
   const { language, toggleLanguage, t } = useLanguage();
   const navigate = useNavigate();
 
@@ -29,6 +33,31 @@ const LoginPage = () => {
       );
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleMicrosoftLogin = async () => {
+    setError('');
+    setMsLoading(true);
+    console.log('Starting Microsoft login...');
+
+    try {
+      console.log('Calling loginPopup with:', loginRequest);
+      const response = await instance.loginPopup(loginRequest);
+      console.log('MSAL response:', response);
+      await loginWithEntraId(response.accessToken, response.account);
+      navigate('/');
+    } catch (err) {
+      console.error('Microsoft login error:', err);
+      if (err.errorCode !== 'user_cancelled') {
+        setError(
+          err.response?.data?.error ||
+          err.message ||
+          (language === 'sv' ? 'Microsoft-inloggning misslyckades' : 'Microsoft login failed')
+        );
+      }
+    } finally {
+      setMsLoading(false);
     }
   };
 
@@ -93,7 +122,7 @@ const LoginPage = () => {
           <button
             type="submit"
             className="btn btn-primary btn-lg"
-            disabled={loading}
+            disabled={loading || msLoading}
           >
             {loading ? (
               <>
@@ -105,6 +134,34 @@ const LoginPage = () => {
             )}
           </button>
         </form>
+
+        <div className="auth-divider">
+          <span>{language === 'sv' ? 'eller' : 'or'}</span>
+        </div>
+
+        <button
+          type="button"
+          className="btn btn-microsoft btn-lg"
+          onClick={handleMicrosoftLogin}
+          disabled={loading || msLoading}
+        >
+          {msLoading ? (
+            <>
+              <span className="spinner" style={{ width: 20, height: 20, borderWidth: 2 }}></span>
+              {language === 'sv' ? 'Loggar in...' : 'Signing in...'}
+            </>
+          ) : (
+            <>
+              <svg className="microsoft-icon" viewBox="0 0 21 21" xmlns="http://www.w3.org/2000/svg">
+                <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
+                <rect x="11" y="1" width="9" height="9" fill="#7fba00"/>
+                <rect x="1" y="11" width="9" height="9" fill="#00a4ef"/>
+                <rect x="11" y="11" width="9" height="9" fill="#ffb900"/>
+              </svg>
+              {language === 'sv' ? 'Logga in med Microsoft' : 'Sign in with Microsoft'}
+            </>
+          )}
+        </button>
 
         <div className="auth-footer">
           <p>
