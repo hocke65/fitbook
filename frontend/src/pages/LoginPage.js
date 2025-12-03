@@ -44,7 +44,7 @@ const LoginPage = () => {
         </button>
 
         <div className="auth-logo">
-          <h1>💪 FitBook</h1>
+          <img src="/Lynx_Logo_Color.svg" alt="Lynx" className="auth-logo-image" />
           <p>{language === 'sv' ? 'Boka dina träningspass enkelt' : 'Book your fitness classes easily'}</p>
         </div>
 

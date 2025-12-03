@@ -37,8 +37,7 @@ const Header = () => {
     <header className="header">
       <div className="container header-content">
         <Link to="/" className="logo" onClick={closeMobileMenu}>
-          <span className="logo-icon">💪</span>
-          FitBook
+          <img src="/Lynx_Logo_Color.svg" alt="Lynx" className="logo-image" />
         </Link>
 
         <button
