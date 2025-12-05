@@ -1,0 +1,480 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Lynx Fitness Booking Platform - Serverless
+
+Globals:
+  Function:
+    Timeout: 10
+    Runtime: nodejs20.x
+    MemorySize: 256
+    PermissionsBoundary: !Sub arn:aws:iam::${AWS::AccountId}:policy/developer-permission-boundary-policy
+    Environment:
+      Variables:
+        TABLE_NAME: !Ref FitbookTable
+        JWT_SECRET: !Ref JwtSecret
+        AZURE_TENANT_ID: !Ref AzureTenantId
+        AZURE_CLIENT_ID: !Ref AzureClientId
+
+Parameters:
+  JwtSecret:
+    Type: String
+    Description: Secret for JWT token signing (min 32 chars)
+    NoEcho: true
+  AzureTenantId:
+    Type: String
+    Description: Microsoft Entra ID Tenant ID
+    Default: ''
+  AzureClientId:
+    Type: String
+    Description: Microsoft Entra ID Client ID
+    Default: ''
+  Stage:
+    Type: String
+    Default: prod
+    AllowedValues:
+      - dev
+      - prod
+
+Resources:
+  # DynamoDB Single Table Design
+  FitbookTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub fitbook-${Stage}
+      BillingMode: PAY_PER_REQUEST  # Cost-effective for variable traffic
+      AttributeDefinitions:
+        - AttributeName: PK
+          AttributeType: S
+        - AttributeName: SK
+          AttributeType: S
+        - AttributeName: GSI1PK
+          AttributeType: S
+        - AttributeName: GSI1SK
+          AttributeType: S
+        - AttributeName: GSI2PK
+          AttributeType: S
+        - AttributeName: GSI2SK
+          AttributeType: S
+      KeySchema:
+        - AttributeName: PK
+          KeyType: HASH
+        - AttributeName: SK
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: GSI1
+          KeySchema:
+            - AttributeName: GSI1PK
+              KeyType: HASH
+            - AttributeName: GSI1SK
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: GSI2
+          KeySchema:
+            - AttributeName: GSI2PK
+              KeyType: HASH
+            - AttributeName: GSI2SK
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+
+  # HTTP API (cheaper than REST API)
+  HttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      StageName: !Ref Stage
+      CorsConfiguration:
+        AllowOrigins:
+          - "*"
+        AllowHeaders:
+          - Content-Type
+          - Authorization
+        AllowMethods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+          - OPTIONS
+
+  # Auth Functions
+  LoginFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers/auth.login
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref FitbookTable
+      Events:
+        Login:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /api/auth/login
+            Method: POST
+
+  EntraLoginFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers/auth.entraLogin
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref FitbookTable
+      Events:
+        EntraLogin:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /api/auth/entra-login
+            Method: POST
+
+  GetMeFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers/auth.getMe
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref FitbookTable
+      Events:
+        GetMe:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /api/auth/me
+            Method: GET
+
+  # Classes Functions
+  GetClassesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers/classes.getClasses
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref FitbookTable
+      Events:
+        GetClasses:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /api/classes
+            Method: GET
+
+  GetClassFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers/classes.getClass
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref FitbookTable
+      Events:
+        GetClass:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /api/classes/{id}
+            Method: GET
+
+  CreateClassFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers/classes.createClass
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref FitbookTable
+      Events:
+        CreateClass:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /api/classes
+            Method: POST
+
+  UpdateClassFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers/classes.updateClass
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref FitbookTable
+      Events:
+        UpdateClass:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /api/classes/{id}
+            Method: PUT
+
+  DeleteClassFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers/classes.deleteClass
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref FitbookTable
+      Events:
+        DeleteClass:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /api/classes/{id}
+            Method: DELETE
+
+  # Bookings Functions
+  GetBookingsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers/bookings.getBookings
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref FitbookTable
+      Events:
+        GetBookings:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /api/bookings
+            Method: GET
+
+  CreateBookingFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers/bookings.createBooking
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref FitbookTable
+      Events:
+        CreateBooking:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /api/bookings/{classId}
+            Method: POST
+
+  CancelBookingFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers/bookings.cancelBooking
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref FitbookTable
+      Events:
+        CancelBooking:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /api/bookings/{classId}
+            Method: DELETE
+
+  GetClassParticipantsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers/bookings.getClassParticipants
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref FitbookTable
+      Events:
+        GetClassParticipants:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /api/bookings/class/{classId}
+            Method: GET
+
+  # Users Functions (Admin)
+  GetUsersFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers/users.getUsers
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref FitbookTable
+      Events:
+        GetUsers:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /api/users
+            Method: GET
+
+  GetUserFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers/users.getUser
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref FitbookTable
+      Events:
+        GetUser:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /api/users/{id}
+            Method: GET
+
+  CreateUserFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers/users.createUser
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref FitbookTable
+      Events:
+        CreateUser:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /api/users
+            Method: POST
+
+  UpdateUserFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers/users.updateUser
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref FitbookTable
+      Events:
+        UpdateUser:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /api/users/{id}
+            Method: PUT
+
+  DeleteUserFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers/users.deleteUser
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref FitbookTable
+      Events:
+        DeleteUser:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /api/users/{id}
+            Method: DELETE
+
+  # Health Check
+  HealthFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers/health.handler
+      MemorySize: 128
+      Events:
+        Health:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /api/health
+            Method: GET
+
+  # S3 Bucket for Frontend
+  FrontendBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub fitbook-frontend-${AWS::AccountId}-${Stage}
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  # CloudFront Origin Access Control
+  CloudFrontOAC:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub fitbook-oac-${Stage}
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  # CloudFront Distribution
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        DefaultRootObject: index.html
+        HttpVersion: http2
+        PriceClass: PriceClass_100  # Cheapest - EU/NA only (perfect for Stockholm)
+        Origins:
+          - Id: S3Origin
+            DomainName: !GetAtt FrontendBucket.RegionalDomainName
+            OriginAccessControlId: !Ref CloudFrontOAC
+            S3OriginConfig:
+              OriginAccessIdentity: ''
+        DefaultCacheBehavior:
+          TargetOriginId: S3Origin
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods:
+            - GET
+            - HEAD
+            - OPTIONS
+          CachedMethods:
+            - GET
+            - HEAD
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6  # CachingOptimized
+          Compress: true
+        # Handle SPA routing - return index.html for 404s
+        CustomErrorResponses:
+          - ErrorCode: 403
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+          - ErrorCode: 404
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+
+  # Bucket Policy for CloudFront
+  FrontendBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref FrontendBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowCloudFrontAccess
+            Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: s3:GetObject
+            Resource: !Sub ${FrontendBucket.Arn}/*
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}
+
+Outputs:
+  ApiUrl:
+    Description: API Gateway endpoint URL
+    Value: !Sub "https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com/${Stage}"
+  TableName:
+    Description: DynamoDB table name
+    Value: !Ref FitbookTable
+  FrontendBucket:
+    Description: S3 bucket for frontend files
+    Value: !Ref FrontendBucket
+  FrontendUrl:
+    Description: CloudFront URL for the frontend
+    Value: !Sub "https://${CloudFrontDistribution.DomainName}"
+  CloudFrontDistributionId:
+    Description: CloudFront distribution ID (for cache invalidation)
+    Value: !Ref CloudFrontDistribution
