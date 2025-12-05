@@ -1,47 +1,55 @@
-# Lynx - Bokningsplattform för Träningspass
+# Lynx - Fitness Class Booking Platform
 
-En komplett webapplikation för att boka träningspass med stöd för användare och administratörer.
+A complete web application for booking fitness classes with support for users and administrators.
 
-## Funktioner
+## Features
 
-### Användare
-- **Logga in med Microsoft Entra ID (Azure AD)** - Enterprise SSO (enda inloggningsmetoden)
-- Se alla tillgängliga träningspass i **list- eller kalendervy**
-- Boka pass (om platser finns)
-- Se vilka andra användare som har bokat samma pass
-- Avboka bokade pass
-- **Flerspråksstöd** - Svenska och engelska
+### Users
+- **Login with Microsoft Entra ID (Azure AD)** - Enterprise SSO (only login method)
+- View all available fitness classes in **list or calendar view**
+- Book classes (if spots are available)
+- See which other users have booked the same class
+- Cancel booked classes
+- **Multi-language support** - Swedish and English
 
-### Administratör
-- Logga in som admin
-- Skapa nya träningspass med:
-  - Titel
-  - Beskrivning
-  - Antal bokningsbara platser
-  - Datum och tid
-  - Längd i minuter
-  - Instruktör
-- Redigera pass
-- Ta bort pass
-- Se alla bokade deltagare för varje pass
-- **Hantera användare** - Skapa, redigera och ta bort användare
+### Administrator
+- Login as admin
+- Create new fitness classes with:
+  - Title
+  - Description
+  - Number of available spots
+  - Date and time
+  - Duration in minutes
+  - Instructor
+- Edit classes
+- Delete classes
+- View all booked participants for each class
+- **User management** - Create, edit, and delete users
 
-### Kalendervy
-- **Månadsvy** - Överblick över alla pass under månaden
-- **Veckovy** - Detaljerad vy av veckans pass
-- **Dagsvy** - Fokuserad vy på dagens schemalagda pass
+### Calendar View
+- **Month view** - Overview of all classes during the month
+- **Week view** - Detailed view of the week's classes
+- **Day view** - Focused view of today's scheduled classes
 
-## Teknisk Stack
+## Technology Stack
 
-- **Backend**: Node.js med Express
-- **Frontend**: React
-- **Databas**: PostgreSQL
-- **Autentisering**: Microsoft Entra ID (Azure AD) + JWT (JSON Web Tokens)
+- **Backend**: Node.js with Express
+- **Frontend**: React 18
+- **Database**: PostgreSQL (local/traditional) or DynamoDB (AWS Serverless)
+- **Authentication**: Microsoft Entra ID (Azure AD) + JWT (JSON Web Tokens)
 - **Azure Integration**: MSAL.js (Microsoft Authentication Library)
-- **Styling**: Responsiv CSS med CSS Custom Properties
-- **Internationalisering**: React Context för flerspråksstöd
+- **Styling**: Responsive CSS with CSS Custom Properties
+- **Internationalization**: React Context for multi-language support
 
-## Databasstruktur
+### Deployment Options
+
+| Option | Database | Cost | Usage |
+|--------|----------|------|-------|
+| Local development | PostgreSQL | Free | Development |
+| Traditional hosting | PostgreSQL | Varies | Production |
+| AWS Serverless (SAM) | DynamoDB | ~$0.50-2/month | Production (cost-optimized) |
+
+## Database Structure
 
 ```
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
@@ -60,58 +68,58 @@ En komplett webapplikation för att boka träningspass med stöd för användare
 └─────────────────┘                             └─────────────────┘
 ```
 
-**Nya kolumner för Entra ID-stöd:**
-- `entra_id` - Unikt ID från Microsoft Entra ID
-- `auth_provider` - Inloggningsmetod ('local' eller 'entra')
+**New columns for Entra ID support:**
+- `entra_id` - Unique ID from Microsoft Entra ID
+- `auth_provider` - Login method ('local' or 'entra')
 
-## Installation & Körning
+## Installation & Running
 
-### Förutsättningar
-- Node.js (v18 eller senare)
-- PostgreSQL (v14 eller senare)
-- npm eller yarn
-- Microsoft Entra ID (Azure AD) app-registrering (krävs för inloggning)
+### Prerequisites
+- Node.js (v18 or later)
+- PostgreSQL (v14 or later)
+- npm or yarn
+- Microsoft Entra ID (Azure AD) app registration (required for login)
 
-### 1. Klona/Kopiera projektet
+### 1. Clone/Copy the project
 
 ```bash
 cd fitness-booking-app
 ```
 
-### 2. Sätt upp databasen
+### 2. Set up the database
 
 ```bash
-# Logga in på PostgreSQL
+# Login to PostgreSQL
 psql -U postgres
 
-# Skapa databas
+# Create database
 CREATE DATABASE fitness_booking;
 
-# Avsluta psql
+# Exit psql
 \q
 
-# Kör schema-skriptet
+# Run the schema script
 psql -U postgres -d fitness_booking -f database/schema.sql
 
-# Kör migrering för Entra ID-stöd
+# Run migration for Entra ID support
 psql -U postgres -d fitness_booking -f backend/migrations/add_entra_id_columns.sql
 ```
 
-### 3. Konfigurera Backend
+### 3. Configure Backend
 
 ```bash
 cd backend
 
-# Installera beroenden
+# Install dependencies
 npm install
 
-# Skapa .env-fil från mall
+# Create .env file from template
 cp .env.example .env
 
-# Redigera .env med dina inställningar
+# Edit .env with your settings
 ```
 
-**.env-konfiguration:**
+**.env configuration:**
 ```env
 PORT=5000
 NODE_ENV=development
@@ -120,51 +128,51 @@ DB_HOST=localhost
 DB_PORT=5432
 DB_NAME=fitness_booking
 DB_USER=postgres
-DB_PASSWORD=ditt_lösenord
+DB_PASSWORD=your_password
 
-JWT_SECRET=en-säker-hemlig-nyckel-minst-32-tecken
+JWT_SECRET=a-secure-secret-key-at-least-32-characters
 JWT_EXPIRES_IN=7d
 
 FRONTEND_URL=http://localhost:3000
 
 # Microsoft Entra ID (Azure AD) Configuration
-AZURE_TENANT_ID=ditt-tenant-id
-AZURE_CLIENT_ID=ditt-client-id
+AZURE_TENANT_ID=your-tenant-id
+AZURE_CLIENT_ID=your-client-id
 ```
 
-### 4. Konfigurera Frontend
+### 4. Configure Frontend
 
 ```bash
 cd ../frontend
 
-# Installera beroenden
+# Install dependencies
 npm install
 
-# Skapa .env-fil
-cp .env.example .env  # eller skapa manuellt
+# Create .env file
+cp .env.example .env  # or create manually
 ```
 
-**Frontend .env-konfiguration:**
+**Frontend .env configuration:**
 ```env
 REACT_APP_API_URL=http://localhost:5000/api
 
 # Microsoft Entra ID (Azure AD) Configuration
-REACT_APP_AZURE_CLIENT_ID=ditt-client-id
-REACT_APP_AZURE_TENANT_ID=ditt-tenant-id
+REACT_APP_AZURE_CLIENT_ID=your-client-id
+REACT_APP_AZURE_TENANT_ID=your-tenant-id
 REACT_APP_AZURE_REDIRECT_URI=http://localhost:3000
 ```
 
-### 4.1 Konfigurera Azure App Registration (för Microsoft-inloggning)
+### 4.1 Configure Azure App Registration (for Microsoft login)
 
-1. Gå till [Azure Portal](https://portal.azure.com) > Microsoft Entra ID > App registrations
-2. Skapa en ny app eller använd en befintlig
+1. Go to [Azure Portal](https://portal.azure.com) > Microsoft Entra ID > App registrations
+2. Create a new app or use an existing one
 3. Under **Authentication**:
-   - Lägg till plattformen **Single-page application (SPA)**
-   - Sätt Redirect URI till `http://localhost:3000`
-4. Kopiera **Application (client) ID** och **Directory (tenant) ID**
-5. Uppdatera `.env`-filerna i både frontend och backend
+   - Add the **Single-page application (SPA)** platform
+   - Set Redirect URI to `http://localhost:3000`
+4. Copy **Application (client) ID** and **Directory (tenant) ID**
+5. Update the `.env` files in both frontend and backend
 
-### 5. Starta applikationen
+### 5. Start the application
 
 **Terminal 1 - Backend:**
 ```bash
@@ -178,144 +186,218 @@ cd frontend
 npm start
 ```
 
-Applikationen är nu tillgänglig på:
+The application is now available at:
 - **Frontend**: http://localhost:3000
 - **Backend API**: http://localhost:5000
 
-## API-dokumentation
+## AWS Serverless Deployment
 
-### Autentisering
+For cost-optimized production deployment, see the [AWS Serverless README](aws-serverless/README.md).
 
-| Metod | Endpoint | Beskrivning |
-|-------|----------|-------------|
-| POST | `/api/auth/entra-login` | Logga in med Microsoft Entra ID |
-| GET | `/api/auth/me` | Hämta inloggad användare |
+### Quick Start (AWS)
 
-### Träningspass
+```bash
+cd aws-serverless
 
-| Metod | Endpoint | Beskrivning | Auth |
-|-------|----------|-------------|------|
-| GET | `/api/classes` | Lista alla pass | - |
-| GET | `/api/classes/:id` | Hämta ett pass med deltagare | - |
-| POST | `/api/classes` | Skapa nytt pass | Admin |
-| PUT | `/api/classes/:id` | Uppdatera pass | Admin |
-| DELETE | `/api/classes/:id` | Ta bort pass | Admin |
+# Install dependencies
+npm install
 
-### Bokningar
+# Build and deploy
+sam build
+sam deploy --guided
 
-| Metod | Endpoint | Beskrivning | Auth |
-|-------|----------|-------------|------|
-| GET | `/api/bookings` | Mina bokningar | User |
-| POST | `/api/bookings/:classId` | Boka pass | User |
-| DELETE | `/api/bookings/:classId` | Avboka pass | User |
-| GET | `/api/bookings/class/:classId` | Deltagare för pass | User |
+# Seed initial data
+node scripts/seed-data.js $TABLE_NAME
 
-## Användarhantering
-
-Användare skapas automatiskt vid första inloggningen via Microsoft Entra ID.
-
-### Uppgradera användare till admin
-
-Efter att en användare loggat in första gången kan du uppgradera dem till admin:
-```sql
-UPDATE users SET role = 'admin' WHERE email = 'användare@företag.se';
+# Deploy frontend
+export REACT_APP_AZURE_CLIENT_ID=your-client-id
+export REACT_APP_AZURE_TENANT_ID=your-tenant-id
+./scripts/deploy-frontend.sh
 ```
 
-Eller använd superuser-rollen för fullständiga rättigheter:
+### AWS Architecture
+
+- **Lambda**: Serverless compute (Node.js 20.x)
+- **API Gateway**: HTTP API (cost-optimized)
+- **DynamoDB**: On-demand pricing
+- **S3 + CloudFront**: Frontend hosting with HTTPS
+
+### Estimated Costs (50 users)
+
+| Service | Cost |
+|---------|------|
+| Lambda | $0.00 (free tier) |
+| API Gateway | $0.00 (free tier) |
+| DynamoDB | $0.00-$1.00 |
+| S3 | ~$0.01 |
+| CloudFront | $0.50-$1.00 |
+| **Total** | **$0.50-$2.00/month** |
+
+## API Documentation
+
+### Authentication
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/auth/entra-login` | Login with Microsoft Entra ID |
+| GET | `/api/auth/me` | Get logged in user |
+
+### Fitness Classes
+
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| GET | `/api/classes` | List all classes | - |
+| GET | `/api/classes/:id` | Get a class with participants | - |
+| POST | `/api/classes` | Create new class | Admin |
+| PUT | `/api/classes/:id` | Update class | Admin |
+| DELETE | `/api/classes/:id` | Delete class | Admin |
+
+### Bookings
+
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| GET | `/api/bookings` | My bookings | User |
+| POST | `/api/bookings/:classId` | Book class | User |
+| DELETE | `/api/bookings/:classId` | Cancel booking | User |
+| GET | `/api/bookings/class/:classId` | Participants for class | User |
+
+### Users (Admin)
+
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| GET | `/api/users` | List all users | Admin |
+| GET | `/api/users/:id` | Get user details | Admin |
+| POST | `/api/users` | Create user | Admin |
+| PUT | `/api/users/:id` | Update user | Admin |
+| DELETE | `/api/users/:id` | Delete user | Admin |
+
+## User Management
+
+Users are automatically created on first login via Microsoft Entra ID.
+
+### Upgrade user to admin
+
+After a user logs in for the first time, you can upgrade them to admin:
 ```sql
-UPDATE users SET role = 'superuser' WHERE email = 'användare@företag.se';
+UPDATE users SET role = 'admin' WHERE email = 'user@company.com';
 ```
 
-## Projektstruktur
+Or use the superuser role for full permissions:
+```sql
+UPDATE users SET role = 'superuser' WHERE email = 'user@company.com';
+```
+
+## Project Structure
 
 ```
 fitness-booking-app/
-├── backend/
+├── backend/                          # Express.js backend (PostgreSQL)
 │   ├── migrations/
-│   │   └── add_entra_id_columns.sql  # Migrering för Entra ID
+│   │   └── add_entra_id_columns.sql  # Migration for Entra ID
 │   ├── src/
 │   │   ├── config/
-│   │   │   └── database.js           # Databasanslutning
+│   │   │   └── database.js           # Database connection
 │   │   ├── middleware/
-│   │   │   └── auth.js               # JWT-autentisering
+│   │   │   └── auth.js               # JWT authentication
 │   │   ├── routes/
-│   │   │   ├── auth.js               # Autentisering (inkl. Entra ID)
-│   │   │   ├── classes.js            # Träningspass endpoints
-│   │   │   ├── bookings.js           # Bokningar endpoints
-│   │   │   └── users.js              # Användarhantering (admin)
+│   │   │   ├── auth.js               # Authentication (incl. Entra ID)
+│   │   │   ├── classes.js            # Fitness class endpoints
+│   │   │   ├── bookings.js           # Booking endpoints
+│   │   │   └── users.js              # User management (admin)
 │   │   └── server.js                 # Express server
+│   ├── ssl/                          # SSL certificates (optional)
 │   ├── .env.example
 │   └── package.json
-├── frontend/
+├── frontend/                         # React frontend
 │   ├── public/
 │   │   ├── index.html
-│   │   └── Lynx_Logo_Color.svg       # Lynx logotyp
+│   │   └── Lynx_Logo_Color.svg       # Lynx logo
 │   ├── src/
 │   │   ├── components/
 │   │   │   ├── Header.js             # Navigation header
-│   │   │   ├── ClassCard.js          # Kort för träningspass
-│   │   │   ├── CalendarView.js       # Kalendervy-komponent
-│   │   │   └── Modal.js              # Modal-komponent
+│   │   │   ├── ClassCard.js          # Fitness class card
+│   │   │   ├── CalendarView.js       # Calendar view component
+│   │   │   └── Modal.js              # Modal component
 │   │   ├── config/
-│   │   │   └── msalConfig.js         # Microsoft MSAL-konfiguration
+│   │   │   └── msalConfig.js         # Microsoft MSAL configuration
 │   │   ├── context/
 │   │   │   ├── AuthContext.js        # Auth state management
-│   │   │   └── LanguageContext.js    # Flerspråksstöd
+│   │   │   └── LanguageContext.js    # Multi-language support
 │   │   ├── pages/
-│   │   │   ├── LoginPage.js          # Inloggning (Microsoft Entra ID)
-│   │   │   ├── ClassesPage.js        # Lista träningspass + kalender
-│   │   │   ├── MyBookingsPage.js     # Mina bokningar
-│   │   │   └── AdminPage.js          # Admin-panel
+│   │   │   ├── LoginPage.js          # Login (Microsoft Entra ID)
+│   │   │   ├── ClassesPage.js        # List fitness classes + calendar
+│   │   │   ├── MyBookingsPage.js     # My bookings
+│   │   │   └── AdminPage.js          # Admin panel
 │   │   ├── services/
-│   │   │   └── api.js                # Axios API-klient
+│   │   │   └── api.js                # Axios API client
 │   │   ├── styles/
-│   │   │   └── index.css             # Global styling (Lynx tema)
+│   │   │   └── index.css             # Global styling (Lynx theme)
 │   │   ├── App.js                    # App routing + MSAL Provider
 │   │   └── index.js                  # Entry point
 │   ├── .env
 │   └── package.json
+├── aws-serverless/                   # AWS SAM Serverless deployment
+│   ├── src/
+│   │   ├── handlers/                 # Lambda functions
+│   │   │   ├── auth.js               # Authentication
+│   │   │   ├── bookings.js           # Bookings
+│   │   │   ├── classes.js            # Fitness classes
+│   │   │   ├── users.js              # Users
+│   │   │   └── health.js             # Health check
+│   │   ├── middleware/               # Shared middleware
+│   │   └── lib/                      # Utility functions
+│   ├── scripts/
+│   │   ├── deploy-frontend.sh        # Frontend deployment
+│   │   └── seed-data.js              # Seed data for DynamoDB
+│   ├── template.yaml                 # SAM CloudFormation template
+│   └── README.md                     # AWS deployment guide
 ├── database/
-│   └── schema.sql                    # Databasschema
+│   └── schema.sql                    # PostgreSQL schema
 └── README.md
 ```
 
-## SSL/HTTPS-stöd
+## SSL/HTTPS Support
 
-Backend har inbyggt stöd för HTTPS med SSL-certifikat.
+Backend has built-in support for HTTPS with SSL certificates.
 
-### Aktivera SSL
+### Enable SSL
 
-1. Generera ett självsignerat certifikat (för utveckling):
+1. Generate a self-signed certificate (for development):
 ```bash
 cd backend/ssl
 openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout server.key -out server.crt -subj "/CN=localhost"
 ```
 
-2. Aktivera SSL i `.env`:
+2. Enable SSL in `.env`:
 ```env
 SSL_ENABLED=true
 SSL_KEY_PATH=./ssl/server.key
 SSL_CERT_PATH=./ssl/server.crt
 ```
 
-3. Starta om servern - den körs nu på `https://localhost:5000`
+3. Restart the server - it now runs on `https://localhost:5000`
 
-**Notera:** För produktion, använd riktiga certifikat från t.ex. Let's Encrypt.
+**Note:** For production, use proper certificates from e.g. Let's Encrypt.
 
-## Säkerhet
+## Security
 
-- **Microsoft Entra ID** för enterprise SSO (enda inloggningsmetoden)
-- **SSL/HTTPS-stöd** för krypterad trafik
-- JWT för sessionshantering
-- MSAL.js med säker token-hantering (sessionStorage)
-- Input-validering med express-validator
-- CORS-konfiguration
-- Prepared statements för SQL (skydd mot SQL injection)
-- Admin-behörighetskontroll på skyddade endpoints
+- **Microsoft Entra ID** for enterprise SSO (only login method)
+- **SSL/HTTPS support** for encrypted traffic
+- JWT for session management
+- MSAL.js with secure token handling (sessionStorage)
+- Input validation with express-validator
+- CORS configuration
+- Prepared statements for SQL (protection against SQL injection)
+- Admin permission control on protected endpoints
+- Race condition prevention in bookings (database transactions)
 
-## Responsiv Design
+## Responsive Design
 
-Applikationen är fullt responsiv och fungerar på:
+The application is fully responsive and works on:
 - Desktop (1200px+)
 - Tablet (768px - 1199px)
-- Mobil (< 768px)
+- Mobile (< 768px)
+
+## License
+
+MIT
