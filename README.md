@@ -5,8 +5,7 @@ En komplett webapplikation för att boka träningspass med stöd för användare
 ## Funktioner
 
 ### Användare
-- Registrera sig och logga in
-- **Logga in med Microsoft Entra ID (Azure AD)** - Enterprise SSO-stöd
+- **Logga in med Microsoft Entra ID (Azure AD)** - Enterprise SSO (enda inloggningsmetoden)
 - Se alla tillgängliga träningspass i **list- eller kalendervy**
 - Boka pass (om platser finns)
 - Se vilka andra användare som har bokat samma pass
@@ -37,7 +36,7 @@ En komplett webapplikation för att boka träningspass med stöd för användare
 - **Backend**: Node.js med Express
 - **Frontend**: React
 - **Databas**: PostgreSQL
-- **Autentisering**: JWT (JSON Web Tokens) + Microsoft Entra ID (Azure AD)
+- **Autentisering**: Microsoft Entra ID (Azure AD) + JWT (JSON Web Tokens)
 - **Azure Integration**: MSAL.js (Microsoft Authentication Library)
 - **Styling**: Responsiv CSS med CSS Custom Properties
 - **Internationalisering**: React Context för flerspråksstöd
@@ -71,7 +70,7 @@ En komplett webapplikation för att boka träningspass med stöd för användare
 - Node.js (v18 eller senare)
 - PostgreSQL (v14 eller senare)
 - npm eller yarn
-- Microsoft Entra ID (Azure AD) app-registrering (för enterprise SSO)
+- Microsoft Entra ID (Azure AD) app-registrering (krävs för inloggning)
 
 ### 1. Klona/Kopiera projektet
 
@@ -189,8 +188,6 @@ Applikationen är nu tillgänglig på:
 
 | Metod | Endpoint | Beskrivning |
 |-------|----------|-------------|
-| POST | `/api/auth/register` | Registrera ny användare |
-| POST | `/api/auth/login` | Logga in |
 | POST | `/api/auth/entra-login` | Logga in med Microsoft Entra ID |
 | GET | `/api/auth/me` | Hämta inloggad användare |
 
@@ -213,25 +210,20 @@ Applikationen är nu tillgänglig på:
 | DELETE | `/api/bookings/:classId` | Avboka pass | User |
 | GET | `/api/bookings/class/:classId` | Deltagare för pass | User |
 
-## Testanvändare
+## Användarhantering
 
-Efter att ha kört schema.sql finns en admin-användare:
-- **E-post**: admin@fitness.se
-- **Lösenord**: (måste skapas manuellt, se nedan)
+Användare skapas automatiskt vid första inloggningen via Microsoft Entra ID.
 
-### Skapa admin-användare
+### Uppgradera användare till admin
 
-```bash
-# Generera lösenordshash (kör i Node.js)
-node -e "const bcrypt = require('bcryptjs'); bcrypt.hash('admin123', 10).then(h => console.log(h))"
-
-# Uppdatera i databasen
-psql -U postgres -d fitness_booking -c "UPDATE users SET password_hash='DIN_HASH_HÄR' WHERE email='admin@fitness.se'"
+Efter att en användare loggat in första gången kan du uppgradera dem till admin:
+```sql
+UPDATE users SET role = 'admin' WHERE email = 'användare@företag.se';
 ```
 
-Eller registrera en ny användare via appen och uppgradera till admin:
+Eller använd superuser-rollen för fullständiga rättigheter:
 ```sql
-UPDATE users SET role = 'admin' WHERE email = 'din@email.se';
+UPDATE users SET role = 'superuser' WHERE email = 'användare@företag.se';
 ```
 
 ## Projektstruktur
@@ -270,8 +262,7 @@ fitness-booking-app/
 │   │   │   ├── AuthContext.js        # Auth state management
 │   │   │   └── LanguageContext.js    # Flerspråksstöd
 │   │   ├── pages/
-│   │   │   ├── LoginPage.js          # Inloggning (inkl. Microsoft)
-│   │   │   ├── RegisterPage.js       # Registrering
+│   │   │   ├── LoginPage.js          # Inloggning (Microsoft Entra ID)
 │   │   │   ├── ClassesPage.js        # Lista träningspass + kalender
 │   │   │   ├── MyBookingsPage.js     # Mina bokningar
 │   │   │   └── AdminPage.js          # Admin-panel
@@ -313,15 +304,14 @@ SSL_CERT_PATH=./ssl/server.crt
 
 ## Säkerhet
 
+- **Microsoft Entra ID** för enterprise SSO (enda inloggningsmetoden)
 - **SSL/HTTPS-stöd** för krypterad trafik
-- Lösenord hashas med bcrypt
 - JWT för sessionshantering
-- **Microsoft Entra ID** för enterprise SSO
+- MSAL.js med säker token-hantering (sessionStorage)
 - Input-validering med express-validator
 - CORS-konfiguration
 - Prepared statements för SQL (skydd mot SQL injection)
 - Admin-behörighetskontroll på skyddade endpoints
-- MSAL.js med säker token-hantering (sessionStorage)
 
 ## Responsiv Design
 
