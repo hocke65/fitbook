@@ -1,7 +1,7 @@
 const express = require('express');
 const { body, param, validationResult } = require('express-validator');
 const db = require('../config/database');
-const { authenticateToken, requireAdmin } = require('../middleware/auth');
+const { authenticateToken, requireClassManager } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -117,12 +117,12 @@ router.get('/:id', param('id').isInt(), async (req, res) => {
 });
 
 // ============================================
-// POST /api/classes - Skapa nytt pass (Admin)
+// POST /api/classes - Skapa nytt pass (Admin/Superuser)
 // ============================================
 router.post(
   '/',
   authenticateToken,
-  requireAdmin,
+  requireClassManager,
   [
     body('title').trim().notEmpty().withMessage('Titel krävs'),
     body('description').trim().optional(),
@@ -186,12 +186,12 @@ router.post(
 );
 
 // ============================================
-// PUT /api/classes/:id - Uppdatera pass (Admin)
+// PUT /api/classes/:id - Uppdatera pass (Admin/Superuser)
 // ============================================
 router.put(
   '/:id',
   authenticateToken,
-  requireAdmin,
+  requireClassManager,
   [
     param('id').isInt(),
     body('title').trim().optional(),
@@ -274,12 +274,12 @@ router.put(
 );
 
 // ============================================
-// DELETE /api/classes/:id - Ta bort pass (Admin)
+// DELETE /api/classes/:id - Ta bort pass (Admin/Superuser)
 // ============================================
 router.delete(
   '/:id',
   authenticateToken,
-  requireAdmin,
+  requireClassManager,
   param('id').isInt(),
   async (req, res) => {
     try {

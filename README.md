@@ -288,8 +288,32 @@ fitness-booking-app/
 └── README.md
 ```
 
+## SSL/HTTPS-stöd
+
+Backend har inbyggt stöd för HTTPS med SSL-certifikat.
+
+### Aktivera SSL
+
+1. Generera ett självsignerat certifikat (för utveckling):
+```bash
+cd backend/ssl
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout server.key -out server.crt -subj "/CN=localhost"
+```
+
+2. Aktivera SSL i `.env`:
+```env
+SSL_ENABLED=true
+SSL_KEY_PATH=./ssl/server.key
+SSL_CERT_PATH=./ssl/server.crt
+```
+
+3. Starta om servern - den körs nu på `https://localhost:5000`
+
+**Notera:** För produktion, använd riktiga certifikat från t.ex. Let's Encrypt.
+
 ## Säkerhet
 
+- **SSL/HTTPS-stöd** för krypterad trafik
 - Lösenord hashas med bcrypt
 - JWT för sessionshantering
 - **Microsoft Entra ID** för enterprise SSO

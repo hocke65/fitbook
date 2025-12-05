@@ -278,6 +278,7 @@ const AdminPage = () => {
   const totalBookings = classes.reduce((acc, c) => acc + (c.bookedCount || 0), 0);
   const totalCapacity = classes.reduce((acc, c) => acc + c.maxCapacity, 0);
   const adminCount = users.filter(u => u.role === 'admin').length;
+  const superuserCount = users.filter(u => u.role === 'superuser').length;
   const userCount = users.filter(u => u.role === 'user').length;
 
   if (loading) {
@@ -490,6 +491,10 @@ const AdminPage = () => {
               <div className="stat-label">{t('admin.administrators')}</div>
             </div>
             <div className="stat-card">
+              <div className="stat-value">{superuserCount}</div>
+              <div className="stat-label">{t('admin.superusers')}</div>
+            </div>
+            <div className="stat-card">
               <div className="stat-value">{userCount}</div>
               <div className="stat-label">{t('admin.regularUsers')}</div>
             </div>
@@ -557,7 +562,11 @@ const AdminPage = () => {
                       <td>{user.email}</td>
                       <td style={{ textAlign: 'center' }}>
                         <span className={`role-badge ${user.role}`}>
-                          {user.role === 'admin' ? `👑 ${t('admin.roleAdmin')}` : `👤 ${t('admin.roleUser')}`}
+                          {user.role === 'admin'
+                            ? `👑 ${t('admin.roleAdmin')}`
+                            : user.role === 'superuser'
+                              ? `⭐ ${t('admin.roleSuperuser')}`
+                              : `👤 ${t('admin.roleUser')}`}
                         </span>
                       </td>
                       <td style={{ textAlign: 'center' }}>
@@ -872,6 +881,7 @@ const AdminPage = () => {
               onChange={handleUserFormChange}
             >
               <option value="user">{t('admin.roleUser')}</option>
+              <option value="superuser">{t('admin.roleSuperuserOption')}</option>
               <option value="admin">{t('admin.roleAdminOption')}</option>
             </select>
           </div>

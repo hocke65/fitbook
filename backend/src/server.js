@@ -1,5 +1,9 @@
 const express = require('express');
 const cors = require('cors');
+const https = require('https');
+const http = require('http');
+const fs = require('fs');
+const path = require('path');
 require('dotenv').config();
 
 const authRoutes = require('./routes/auth');
@@ -75,13 +79,35 @@ app.use((err, req, res, next) => {
 // START SERVER
 // ============================================
 
-app.listen(PORT, () => {
-  console.log('=========================================');
-  console.log(`🏋️  Fitness Booking API`);
-  console.log(`🚀 Server körs på port ${PORT}`);
-  console.log(`📍 http://localhost:${PORT}`);
-  console.log(`🌍 Miljö: ${process.env.NODE_ENV || 'development'}`);
-  console.log('=========================================');
-});
+const useSSL = process.env.SSL_ENABLED === 'true';
+
+if (useSSL) {
+  const sslKeyPath = process.env.SSL_KEY_PATH || path.join(__dirname, '../ssl/server.key');
+  const sslCertPath = process.env.SSL_CERT_PATH || path.join(__dirname, '../ssl/server.crt');
+
+  const sslOptions = {
+    key: fs.readFileSync(sslKeyPath),
+    cert: fs.readFileSync(sslCertPath),
+  };
+
+  https.createServer(sslOptions, app).listen(PORT, () => {
+    console.log('=========================================');
+    console.log(`🏋️  Fitness Booking API`);
+    console.log(`🚀 Server körs på port ${PORT} (HTTPS)`);
+    console.log(`📍 https://localhost:${PORT}`);
+    console.log(`🔒 SSL aktiverat`);
+    console.log(`🌍 Miljö: ${process.env.NODE_ENV || 'development'}`);
+    console.log('=========================================');
+  });
+} else {
+  app.listen(PORT, () => {
+    console.log('=========================================');
+    console.log(`🏋️  Fitness Booking API`);
+    console.log(`🚀 Server körs på port ${PORT}`);
+    console.log(`📍 http://localhost:${PORT}`);
+    console.log(`🌍 Miljö: ${process.env.NODE_ENV || 'development'}`);
+    console.log('=========================================');
+  });
+}
 
 module.exports = app;

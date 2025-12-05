@@ -2,3 +2,8 @@ node_modules/
 .env
 *.log
 .DS_Store
+
+# SSL certificates (generate locally, don't commit)
+ssl/*.key
+ssl/*.crt
+ssl/*.pem

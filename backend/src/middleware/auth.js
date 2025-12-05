@@ -43,6 +43,16 @@ const requireAdmin = (req, res, next) => {
   next();
 };
 
+// Middleware för att kontrollera behörighet att hantera pass (admin eller superuser)
+const requireClassManager = (req, res, next) => {
+  if (req.user.role !== 'admin' && req.user.role !== 'superuser') {
+    return res.status(403).json({
+      error: 'Åtkomst nekad. Admin- eller superuser-behörighet krävs.'
+    });
+  }
+  next();
+};
+
 // Generera JWT-token
 const generateToken = (userId) => {
   return jwt.sign(
@@ -55,5 +65,6 @@ const generateToken = (userId) => {
 module.exports = {
   authenticateToken,
   requireAdmin,
+  requireClassManager,
   generateToken,
 };

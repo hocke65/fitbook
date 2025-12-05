@@ -127,6 +127,12 @@ const CalendarView = ({ classes, onClassClick, isClassBooked }) => {
 
   const isToday = (date) => date.toDateString() === today.toDateString();
   const isCurrentMonth = (date) => date.getMonth() === currentDate.getMonth();
+  const isPastDay = (date) => {
+    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const dateStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    return dateStart < todayStart;
+  };
+  const isPastClass = (classData) => new Date(classData.scheduledAt) < new Date();
 
   // Hours for day view
   const hours = Array.from({ length: 15 }, (_, i) => i + 6); // 6:00 - 20:00
@@ -185,7 +191,7 @@ const CalendarView = ({ classes, onClassClick, isClassBooked }) => {
               return (
                 <div
                   key={index}
-                  className={`calendar-day ${isToday(day) ? 'today' : ''} ${!isCurrentMonth(day) ? 'other-month' : ''}`}
+                  className={`calendar-day ${isToday(day) ? 'today' : ''} ${!isCurrentMonth(day) ? 'other-month' : ''} ${isPastDay(day) ? 'past-day' : ''}`}
                   onClick={() => {
                     setCurrentDate(day);
                     setViewMode('day');
@@ -218,7 +224,7 @@ const CalendarView = ({ classes, onClassClick, isClassBooked }) => {
             {days.map((day, index) => (
               <div
                 key={index}
-                className={`week-day-header ${isToday(day) ? 'today' : ''}`}
+                className={`week-day-header ${isToday(day) ? 'today' : ''} ${isPastDay(day) ? 'past-day' : ''}`}
                 onClick={() => {
                   setCurrentDate(day);
                   setViewMode('day');
@@ -233,14 +239,14 @@ const CalendarView = ({ classes, onClassClick, isClassBooked }) => {
             {days.map((day, index) => {
               const dayClasses = getClassesForDay(day);
               return (
-                <div key={index} className={`week-day-column ${isToday(day) ? 'today' : ''}`}>
+                <div key={index} className={`week-day-column ${isToday(day) ? 'today' : ''} ${isPastDay(day) ? 'past-day' : ''}`}>
                   {dayClasses.length === 0 ? (
                     <div className="no-classes-indicator">-</div>
                   ) : (
                     dayClasses.map(c => (
                       <div
                         key={c.id}
-                        className={`week-class-card ${isClassBooked(c.id) ? 'booked' : ''} ${c.availableSpots <= 0 ? 'full' : ''}`}
+                        className={`week-class-card ${isClassBooked(c.id) ? 'booked' : ''} ${c.availableSpots <= 0 ? 'full' : ''} ${isPastClass(c) ? 'past-class' : ''}`}
                         onClick={() => onClassClick(c)}
                       >
                         <span className="week-class-time">{formatTime(c.scheduledAt)}</span>
@@ -278,7 +284,7 @@ const CalendarView = ({ classes, onClassClick, isClassBooked }) => {
                     {hourClasses.map(c => (
                       <div
                         key={c.id}
-                        className={`day-class-card ${isClassBooked(c.id) ? 'booked' : ''} ${c.availableSpots <= 0 ? 'full' : ''}`}
+                        className={`day-class-card ${isClassBooked(c.id) ? 'booked' : ''} ${c.availableSpots <= 0 ? 'full' : ''} ${isPastClass(c) ? 'past-class' : ''}`}
                         onClick={() => onClassClick(c)}
                       >
                         <div className="day-class-header">

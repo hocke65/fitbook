@@ -4,10 +4,11 @@ import { bookingsApi } from '../services/api';
 import { useLanguage } from '../context/LanguageContext';
 
 const MyBookingsPage = () => {
-  const [bookings, setBookings] = useState([]);
+  const [allBookings, setAllBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [cancellingId, setCancellingId] = useState(null);
+  const [viewMode, setViewMode] = useState('upcoming'); // 'upcoming' or 'past'
 
   const { language, t } = useLanguage();
 
@@ -15,9 +16,9 @@ const MyBookingsPage = () => {
     try {
       const response = await bookingsApi.getMyBookings();
       const confirmedBookings = response.data.bookings.filter(
-        (b) => b.status === 'confirmed' && new Date(b.class.scheduledAt) > new Date()
+        (b) => b.status === 'confirmed'
       );
-      setBookings(confirmedBookings);
+      setAllBookings(confirmedBookings);
     } catch (err) {
       setError(t('errors.fetchBookings'));
       console.error(err);
@@ -25,6 +26,16 @@ const MyBookingsPage = () => {
       setLoading(false);
     }
   }, [t]);
+
+  // Filter bookings based on view mode
+  const now = new Date();
+  const upcomingBookings = allBookings.filter(
+    (b) => new Date(b.class.scheduledAt) > now
+  );
+  const pastBookings = allBookings.filter(
+    (b) => new Date(b.class.scheduledAt) <= now
+  );
+  const bookings = viewMode === 'upcoming' ? upcomingBookings : pastBookings;
 
   useEffect(() => {
     fetchBookings();
@@ -73,6 +84,35 @@ const MyBookingsPage = () => {
     const date = new Date(dateString);
     const now = new Date();
     const diff = date - now;
+
+    // Handle past dates
+    if (diff < 0) {
+      const absDiff = Math.abs(diff);
+      const hours = Math.floor(absDiff / (1000 * 60 * 60));
+      const days = Math.floor(hours / 24);
+
+      if (days > 0) {
+        if (language === 'sv') {
+          return `${days} ${days === 1 ? 'dag' : 'dagar'} sedan`;
+        } else {
+          return `${days} ${days === 1 ? 'day' : 'days'} ago`;
+        }
+      } else if (hours > 0) {
+        if (language === 'sv') {
+          return `${hours} ${hours === 1 ? 'timme' : 'timmar'} sedan`;
+        } else {
+          return `${hours} ${hours === 1 ? 'hour' : 'hours'} ago`;
+        }
+      } else {
+        const minutes = Math.floor(absDiff / (1000 * 60));
+        if (language === 'sv') {
+          return `${minutes} min sedan`;
+        } else {
+          return `${minutes} min ago`;
+        }
+      }
+    }
+
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const days = Math.floor(hours / 24);
 
@@ -98,6 +138,8 @@ const MyBookingsPage = () => {
     }
   };
 
+  const isPastBooking = (dateString) => new Date(dateString) < new Date();
+
   if (loading) {
     return (
       <div className="loading">
@@ -110,12 +152,34 @@ const MyBookingsPage = () => {
   return (
     <div className="container page">
       <div className="page-header">
-        <h1 className="page-title">{t('myBookings.title')}</h1>
-        <p className="page-subtitle">
-          {bookings.length > 0
-            ? `${t('myBookings.youHave')} ${bookings.length} ${t('myBookings.upcoming')} ${bookings.length === 1 ? t('myBookings.bookingSingular') : t('myBookings.bookingPlural')}`
-            : t('myBookings.noUpcoming')}
-        </p>
+        <div className="flex-between flex-wrap gap-2">
+          <div>
+            <h1 className="page-title">{t('myBookings.title')}</h1>
+            <p className="page-subtitle">
+              {viewMode === 'upcoming'
+                ? (upcomingBookings.length > 0
+                    ? `${t('myBookings.youHave')} ${upcomingBookings.length} ${t('myBookings.upcoming')} ${upcomingBookings.length === 1 ? t('myBookings.bookingSingular') : t('myBookings.bookingPlural')}`
+                    : t('myBookings.noUpcoming'))
+                : (pastBookings.length > 0
+                    ? `${pastBookings.length} ${t('myBookings.pastBookings')}`
+                    : t('myBookings.noPastBookings'))}
+            </p>
+          </div>
+          <div className="display-mode-toggle">
+            <button
+              className={`display-mode-btn ${viewMode === 'upcoming' ? 'active' : ''}`}
+              onClick={() => setViewMode('upcoming')}
+            >
+              <span>📅</span> {t('myBookings.upcomingTab')} ({upcomingBookings.length})
+            </button>
+            <button
+              className={`display-mode-btn ${viewMode === 'past' ? 'active' : ''}`}
+              onClick={() => setViewMode('past')}
+            >
+              <span>📜</span> {t('myBookings.pastTab')} ({pastBookings.length})
+            </button>
+          </div>
+        </div>
       </div>
 
       {error && (
@@ -137,8 +201,10 @@ const MyBookingsPage = () => {
         </div>
       ) : (
         <div className="classes-grid">
-          {bookings.map((booking) => (
-            <div key={booking.bookingId} className="class-card">
+          {bookings.map((booking) => {
+            const isPast = isPastBooking(booking.class.scheduledAt);
+            return (
+            <div key={booking.bookingId} className={`class-card ${isPast ? 'past-class' : ''}`}>
               <div className="class-card-header">
                 <h3 className="class-card-title">{booking.class.title}</h3>
                 {booking.class.instructor && (
@@ -149,8 +215,8 @@ const MyBookingsPage = () => {
               </div>
 
               <div className="class-card-body">
-                <div className="booked-badge">
-                  <span>✓</span> {t('myBookings.booked')} {getTimeUntil(booking.class.scheduledAt)}
+                <div className={`booked-badge ${isPast ? 'past' : ''}`}>
+                  <span>{isPast ? '✓' : '✓'}</span> {isPast ? t('myBookings.attended') : t('myBookings.booked')} {getTimeUntil(booking.class.scheduledAt)}
                 </div>
 
                 {booking.class.description && (
@@ -176,26 +242,34 @@ const MyBookingsPage = () => {
               </div>
 
               <div className="class-card-footer">
-                <button
-                  onClick={() => handleCancel(booking.class.id)}
-                  disabled={cancellingId === booking.class.id}
-                  className="btn btn-danger"
-                >
-                  {cancellingId === booking.class.id ? (
-                    <>
-                      <span className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }}></span>
-                      {t('classes.cancelling')}
-                    </>
-                  ) : (
-                    <>
-                      <span>✕</span>
-                      {t('classes.cancelButton')}
-                    </>
-                  )}
-                </button>
+                {isPast ? (
+                  <button disabled className="btn btn-ghost">
+                    <span>✓</span>
+                    {t('myBookings.completed')}
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => handleCancel(booking.class.id)}
+                    disabled={cancellingId === booking.class.id}
+                    className="btn btn-danger"
+                  >
+                    {cancellingId === booking.class.id ? (
+                      <>
+                        <span className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }}></span>
+                        {t('classes.cancelling')}
+                      </>
+                    ) : (
+                      <>
+                        <span>✕</span>
+                        {t('classes.cancelButton')}
+                      </>
+                    )}
+                  </button>
+                )}
               </div>
             </div>
-          ))}
+          );
+          })}
         </div>
       )}
     </div>

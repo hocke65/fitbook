@@ -96,6 +96,7 @@ const ClassCard = ({
   };
 
   const isFull = classData.availableSpots <= 0;
+  const isPast = new Date(classData.scheduledAt) < new Date();
   const bookedCount = classData.maxCapacity - classData.availableSpots;
   const spotsPercentage = (bookedCount / classData.maxCapacity) * 100;
 
@@ -104,7 +105,7 @@ const ClassCard = ({
   };
 
   return (
-    <div className={`class-card ${isBooked ? 'booked' : ''}`}>
+    <div className={`class-card ${isBooked ? 'booked' : ''} ${isPast ? 'past-class' : ''}`}>
       <div className="class-card-header">
         <h3 className="class-card-title">{classData.title}</h3>
         {classData.instructor && (
@@ -212,7 +213,15 @@ const ClassCard = ({
       </div>
 
       <div className="class-card-footer">
-        {isBooked ? (
+        {isPast ? (
+          <button
+            disabled
+            className="btn btn-ghost"
+          >
+            <span>⏱️</span>
+            {t('classes.classPassed')}
+          </button>
+        ) : isBooked ? (
           <button
             onClick={handleCancel}
             disabled={loading}

@@ -505,6 +505,19 @@ body {
   box-shadow: var(--shadow-xl), var(--shadow-glow);
 }
 
+.class-card.past-class {
+  opacity: 0.6;
+}
+
+.class-card.past-class::before {
+  background: var(--gray-400);
+}
+
+.class-card.past-class .class-card-title,
+.class-card.past-class .class-card-instructor {
+  color: var(--gray-500);
+}
+
 .class-card-header {
   padding: 1.5rem 1.5rem 1rem;
 }
@@ -662,6 +675,11 @@ body {
   font-size: 0.875rem;
   font-weight: 600;
   margin-bottom: 1rem;
+}
+
+.booked-badge.past {
+  background: linear-gradient(135deg, rgba(156, 163, 175, 0.2) 0%, rgba(107, 114, 128, 0.2) 100%);
+  color: var(--gray-500);
 }
 
 /* ============================================
@@ -1641,6 +1659,23 @@ body {
   opacity: 0.4;
 }
 
+.calendar-day.past-day {
+  background: var(--gray-100);
+  opacity: 0.6;
+}
+
+.calendar-day.past-day .day-number {
+  color: var(--gray-400);
+}
+
+.calendar-day.past-day .day-class-dot {
+  background: var(--gray-400);
+}
+
+.calendar-day.past-day .day-class-dot.booked {
+  background: var(--gray-500);
+}
+
 .day-number {
   font-size: 0.875rem;
   font-weight: 600;
@@ -1724,6 +1759,16 @@ body {
   color: var(--primary);
 }
 
+.week-day-header.past-day {
+  background: var(--gray-50);
+  opacity: 0.7;
+}
+
+.week-day-header.past-day .week-day-name,
+.week-day-header.past-day .week-day-number {
+  color: var(--gray-400);
+}
+
 .week-body {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
@@ -1744,6 +1789,11 @@ body {
 
 .week-day-column.today {
   background: rgba(0, 75, 134, 0.03);
+}
+
+.week-day-column.past-day {
+  background: var(--gray-50);
+  opacity: 0.6;
 }
 
 .no-classes-indicator {
@@ -1775,6 +1825,17 @@ body {
 .week-class-card.full {
   border-left-color: var(--danger);
   opacity: 0.7;
+}
+
+.week-class-card.past-class {
+  border-left-color: var(--gray-400);
+  background: var(--gray-100);
+  opacity: 0.6;
+}
+
+.week-class-card.past-class .week-class-time,
+.week-class-card.past-class .week-class-title {
+  color: var(--gray-500);
 }
 
 .week-class-time {
@@ -1867,6 +1928,17 @@ body {
 .day-class-card.full {
   border-left-color: var(--gray-400);
   opacity: 0.7;
+}
+
+.day-class-card.past-class {
+  border-left-color: var(--gray-400);
+  background: var(--gray-100);
+  opacity: 0.6;
+}
+
+.day-class-card.past-class .day-class-time,
+.day-class-card.past-class .day-class-title {
+  color: var(--gray-500);
 }
 
 .day-class-header {

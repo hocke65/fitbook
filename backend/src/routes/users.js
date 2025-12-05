@@ -91,7 +91,7 @@ router.put('/:id', [
   body('email').optional().isEmail().withMessage('Ogiltig e-postadress'),
   body('firstName').optional().trim().notEmpty().withMessage('Förnamn krävs'),
   body('lastName').optional().trim().notEmpty().withMessage('Efternamn krävs'),
-  body('role').optional().isIn(['user', 'admin']).withMessage('Ogiltig roll'),
+  body('role').optional().isIn(['user', 'admin', 'superuser']).withMessage('Ogiltig roll'),
   body('password').optional().isLength({ min: 6 }).withMessage('Lösenord måste vara minst 6 tecken'),
 ], async (req, res) => {
   const errors = validationResult(req);
@@ -225,7 +225,7 @@ router.post('/', [
   body('password').isLength({ min: 6 }).withMessage('Lösenord måste vara minst 6 tecken'),
   body('firstName').trim().notEmpty().withMessage('Förnamn krävs'),
   body('lastName').trim().notEmpty().withMessage('Efternamn krävs'),
-  body('role').optional().isIn(['user', 'admin']).withMessage('Ogiltig roll'),
+  body('role').optional().isIn(['user', 'admin', 'superuser']).withMessage('Ogiltig roll'),
 ], async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
