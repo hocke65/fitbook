@@ -7,7 +7,6 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { LanguageProvider, useLanguage } from './context/LanguageContext';
 import Header from './components/Header';
 import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
 import ClassesPage from './pages/ClassesPage';
 import MyBookingsPage from './pages/MyBookingsPage';
 import AdminPage from './pages/AdminPage';
@@ -108,15 +107,6 @@ function App() {
                   </PublicRoute>
                 }
               />
-              <Route
-                path="/register"
-                element={
-                  <PublicRoute>
-                    <RegisterPage />
-                  </PublicRoute>
-                }
-              />
-
               {/* Protected routes */}
               <Route
                 path="/"
