@@ -95,6 +95,15 @@ Resources:
           - PUT
           - DELETE
           - OPTIONS
+      Auth:
+        DefaultAuthorizer: JwtAuthorizer
+        Authorizers:
+          JwtAuthorizer:
+            IdentitySource: $request.header.Authorization
+            JwtConfiguration:
+              issuer: !Sub "https://login.microsoftonline.com/${AzureTenantId}/v2.0"
+              audience:
+                - !Ref AzureClientId
 
   # Auth Functions
   LoginFunction:
@@ -112,6 +121,8 @@ Resources:
             ApiId: !Ref HttpApi
             Path: /api/auth/login
             Method: POST
+            Auth:
+              Authorizer: NONE
 
   EntraLoginFunction:
     Type: AWS::Serverless::Function
@@ -128,6 +139,8 @@ Resources:
             ApiId: !Ref HttpApi
             Path: /api/auth/entra-login
             Method: POST
+            Auth:
+              Authorizer: NONE
 
   GetMeFunction:
     Type: AWS::Serverless::Function
@@ -386,6 +399,8 @@ Resources:
             ApiId: !Ref HttpApi
             Path: /api/health
             Method: GET
+            Auth:
+              Authorizer: NONE
 
   # S3 Bucket for Frontend
   FrontendBucket:

@@ -15,7 +15,12 @@ export const msalConfig = {
 };
 
 export const loginRequest = {
-  scopes: ['User.Read', 'openid', 'profile', 'email'],
+  scopes: ['openid', 'profile', 'email'],
+};
+
+// Scopes for API access - uses the client ID as audience
+export const apiRequest = {
+  scopes: [`api://${process.env.REACT_APP_AZURE_CLIENT_ID}/access_as_user`],
 };
 
 export const graphConfig = {

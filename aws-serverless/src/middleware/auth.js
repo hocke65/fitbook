@@ -1,7 +1,18 @@
 import jwt from 'jsonwebtoken';
-import { getItem, response } from '../lib/dynamodb.js';
+import { getItem, queryGSI2, response } from '../lib/dynamodb.js';
 
 const JWT_SECRET = process.env.JWT_SECRET;
+
+// Decode JWT without verification (API Gateway already validated it)
+const decodeToken = (token) => {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    return JSON.parse(Buffer.from(base64, 'base64').toString());
+  } catch (e) {
+    return null;
+  }
+};
 
 // Extract and verify JWT token from Authorization header
 export const verifyToken = async (event) => {
@@ -12,24 +23,43 @@ export const verifyToken = async (event) => {
   }
 
   const token = authHeader.substring(7);
+  const decoded = decodeToken(token);
 
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-
-    // Fetch user from database to ensure they still exist
-    const user = await getItem(`USER#${decoded.userId}`, `USER#${decoded.userId}`);
-
-    if (!user) {
-      return { error: response(401, { error: 'User not found' }) };
-    }
-
-    return { user: formatUserResponse(user) };
-  } catch (error) {
-    if (error.name === 'TokenExpiredError') {
-      return { error: response(401, { error: 'Token expired' }) };
-    }
-    return { error: response(401, { error: 'Invalid token' }) };
+  if (!decoded) {
+    return { error: response(401, { error: 'Invalid token format' }) };
   }
+
+  // Check if this is an Entra ID token (has 'oid' claim) or our backend JWT
+  if (decoded.oid) {
+    // Entra ID token - API Gateway already validated it
+    // Look up user by Entra Object ID (oid)
+    const users = await queryGSI2(`ENTRA#${decoded.oid}`);
+
+    if (!users || users.length === 0) {
+      return { error: response(401, { error: 'User not found. Please login again.' }) };
+    }
+
+    return { user: formatUserResponse(users[0]) };
+  } else if (decoded.userId) {
+    // Backend-issued JWT - verify with our secret
+    try {
+      const verified = jwt.verify(token, JWT_SECRET);
+      const user = await getItem(`USER#${verified.userId}`, `USER#${verified.userId}`);
+
+      if (!user) {
+        return { error: response(401, { error: 'User not found' }) };
+      }
+
+      return { user: formatUserResponse(user) };
+    } catch (error) {
+      if (error.name === 'TokenExpiredError') {
+        return { error: response(401, { error: 'Token expired' }) };
+      }
+      return { error: response(401, { error: 'Invalid token' }) };
+    }
+  }
+
+  return { error: response(401, { error: 'Invalid token' }) };
 };
 
 // Middleware wrapper for authenticated routes
