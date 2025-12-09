@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getAccessToken } from './msalInstance';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
@@ -9,10 +10,11 @@ const api = axios.create({
   },
 });
 
-// Interceptor för att lägga till JWT-token i alla requests
+// Interceptor to add Entra ID token to all requests
 api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('token');
+  async (config) => {
+    // Get fresh token from MSAL
+    const token = await getAccessToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }

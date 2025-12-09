@@ -1,8 +1,8 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { PublicClientApplication, EventType } from '@azure/msal-browser';
+import { EventType } from '@azure/msal-browser';
 import { MsalProvider } from '@azure/msal-react';
-import { msalConfig } from './config/msalConfig';
+import { msalInstance, initializeMsal } from './services/msalInstance';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { LanguageProvider, useLanguage } from './context/LanguageContext';
 import Header from './components/Header';
@@ -11,21 +11,12 @@ import ClassesPage from './pages/ClassesPage';
 import MyBookingsPage from './pages/MyBookingsPage';
 import AdminPage from './pages/AdminPage';
 
-// Initialize MSAL instance
-const msalInstance = new PublicClientApplication(msalConfig);
-
 // Initialize MSAL before app renders
-msalInstance.initialize().then(() => {
+initializeMsal().then(() => {
   // Handle redirect promise for redirect flow
   msalInstance.handleRedirectPromise().catch((error) => {
     console.error('Redirect error:', error);
   });
-
-  // Set active account if available
-  const accounts = msalInstance.getAllAccounts();
-  if (accounts.length > 0) {
-    msalInstance.setActiveAccount(accounts[0]);
-  }
 
   // Listen for sign-in events
   msalInstance.addEventCallback((event) => {
