@@ -1838,6 +1838,17 @@ body {
   color: var(--gray-500);
 }
 
+.week-class-card.deadline-passed {
+  border-left-color: var(--warning);
+  background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+  opacity: 0.85;
+}
+
+.week-class-card.deadline-passed .week-class-spots {
+  color: var(--warning-dark, #92400E);
+  font-weight: 600;
+}
+
 .week-class-time {
   display: block;
   font-size: 0.75rem;
@@ -1939,6 +1950,18 @@ body {
 .day-class-card.past-class .day-class-time,
 .day-class-card.past-class .day-class-title {
   color: var(--gray-500);
+}
+
+.day-class-card.deadline-passed {
+  border-left-color: var(--warning);
+  background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+  opacity: 0.85;
+}
+
+.day-class-card.deadline-passed .day-class-spots,
+.day-class-spots.deadline-passed {
+  color: var(--warning-dark, #92400E);
+  font-weight: 600;
 }
 
 .day-class-header {

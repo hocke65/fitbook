@@ -3,6 +3,7 @@ import api from '../services/api';
 import { msalInstance, initializeMsal } from '../services/msalInstance';
 
 const AuthContext = createContext(null);
+const AUTH_MODE = process.env.REACT_APP_AUTH_MODE || 'local';
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -18,33 +19,48 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const initAuth = async () => {
-      await initializeMsal();
-      const account = msalInstance.getActiveAccount();
+      if (AUTH_MODE === 'entra') {
+        // Entra ID authentication
+        await initializeMsal();
+        const account = msalInstance.getActiveAccount();
 
-      if (account) {
-        try {
-          // Fetch user info from backend using the Entra token
-          const response = await api.get('/auth/me');
-          setUser(response.data.user);
-        } catch (error) {
-          console.error('Failed to fetch user:', error);
-          // If backend doesn't have user, try to create via entra-login
+        if (account) {
           try {
-            const tokenResponse = await msalInstance.acquireTokenSilent({
-              scopes: ['openid', 'profile', 'email'],
-              account,
-            });
-            const loginResponse = await api.post('/auth/entra-login', {
-              accessToken: tokenResponse.idToken,
-              account: {
-                name: account.name,
-                username: account.username,
-                localAccountId: account.localAccountId,
-              },
-            });
-            setUser(loginResponse.data.user);
-          } catch (loginError) {
-            console.error('Failed to login with Entra:', loginError);
+            // Fetch user info from backend using the Entra token
+            const response = await api.get('/auth/me');
+            setUser(response.data.user);
+          } catch (error) {
+            console.error('Failed to fetch user:', error);
+            // If backend doesn't have user, try to create via entra-login
+            try {
+              const tokenResponse = await msalInstance.acquireTokenSilent({
+                scopes: ['openid', 'profile', 'email'],
+                account,
+              });
+              const loginResponse = await api.post('/auth/entra-login', {
+                accessToken: tokenResponse.idToken,
+                account: {
+                  name: account.name,
+                  username: account.username,
+                  localAccountId: account.localAccountId,
+                },
+              });
+              setUser(loginResponse.data.user);
+            } catch (loginError) {
+              console.error('Failed to login with Entra:', loginError);
+            }
+          }
+        }
+      } else {
+        // Local authentication - check if we have a token in localStorage
+        const token = localStorage.getItem('token');
+        if (token) {
+          try {
+            const response = await api.get('/auth/me');
+            setUser(response.data.user);
+          } catch (error) {
+            console.error('Failed to fetch user:', error);
+            localStorage.removeItem('token');
           }
         }
       }
@@ -75,20 +91,25 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     const response = await api.post('/auth/login', { email, password });
-    const { user } = response.data;
+    const { user, token } = response.data;
+    localStorage.setItem('token', token);
     setUser(user);
     return user;
   };
 
   const register = async (userData) => {
     const response = await api.post('/auth/register', userData);
-    const { user } = response.data;
+    const { user, token } = response.data;
+    localStorage.setItem('token', token);
     setUser(user);
     return user;
   };
 
   const logout = () => {
-    msalInstance.logoutPopup().catch(console.error);
+    if (AUTH_MODE === 'entra') {
+      msalInstance.logoutPopup().catch(console.error);
+    }
+    localStorage.removeItem('token');
     setUser(null);
   };
 

@@ -31,6 +31,7 @@ const ClassCard = ({
       weekday: 'short',
       day: 'numeric',
       month: 'short',
+      timeZone: 'Europe/Stockholm',
     });
   };
 
@@ -39,6 +40,8 @@ const ClassCard = ({
     return date.toLocaleTimeString(language === 'sv' ? 'sv-SE' : 'en-US', {
       hour: '2-digit',
       minute: '2-digit',
+      hour12: language !== 'sv',
+      timeZone: 'Europe/Stockholm',
     });
   };
 
@@ -99,6 +102,15 @@ const ClassCard = ({
   const isPast = new Date(classData.scheduledAt) < new Date();
   const bookedCount = classData.maxCapacity - classData.availableSpots;
   const spotsPercentage = (bookedCount / classData.maxCapacity) * 100;
+
+  // Check if booking deadline has passed
+  const deadlineHours = classData.bookingDeadlineHours || 0;
+  const isDeadlinePassed = (() => {
+    if (deadlineHours <= 0) return false;
+    const deadline = new Date(classData.scheduledAt);
+    deadline.setHours(deadline.getHours() - deadlineHours);
+    return new Date() > deadline;
+  })();
 
   const getInitials = (firstName, lastName) => {
     return `${firstName?.[0] || ''}${lastName?.[0] || ''}`.toUpperCase();
@@ -220,6 +232,15 @@ const ClassCard = ({
           >
             <span>⏱️</span>
             {t('classes.classPassed')}
+          </button>
+        ) : isDeadlinePassed ? (
+          <button
+            disabled
+            className="btn btn-ghost"
+            title={t('classes.deadlinePassedTitle').replace('{hours}', deadlineHours)}
+          >
+            <span>🔒</span>
+            {t('classes.deadlinePassed')}
           </button>
         ) : isBooked ? (
           <button

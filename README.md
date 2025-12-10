@@ -1,4 +1,4 @@
-# Lynx - Fitness Class Booking Platform v0.91
+# Lynx - Fitness Class Booking Platform v2025-12-10_1.0
 
 A complete web application for booking fitness classes with support for users and administrators.
 

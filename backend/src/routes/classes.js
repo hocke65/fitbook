@@ -20,6 +20,7 @@ router.get('/', async (req, res) => {
         c.duration_minutes,
         c.instructor,
         c.created_at,
+        c.booking_deadline_hours,
         COUNT(b.id) FILTER (WHERE b.status = 'confirmed') as booked_count
       FROM classes c
       LEFT JOIN bookings b ON c.id = b.class_id
@@ -37,6 +38,7 @@ router.get('/', async (req, res) => {
       durationMinutes: row.duration_minutes,
       instructor: row.instructor,
       createdAt: row.created_at,
+      bookingDeadlineHours: row.booking_deadline_hours || 0,
       bookedCount: parseInt(row.booked_count) || 0,
       availableSpots: row.max_capacity - (parseInt(row.booked_count) || 0),
     }));
@@ -138,6 +140,10 @@ router.post(
       .isInt({ min: 15 })
       .withMessage('Längd måste vara minst 15 minuter'),
     body('instructor').trim().optional(),
+    body('bookingDeadlineHours')
+      .optional()
+      .isInt({ min: 0 })
+      .withMessage('Bokningsdeadline måste vara minst 0 timmar'),
     body('additionalDates')
       .optional()
       .isArray()
@@ -161,6 +167,7 @@ router.post(
         scheduledAt,
         durationMinutes = 60,
         instructor,
+        bookingDeadlineHours = 0,
         additionalDates = []
       } = req.body;
 
@@ -171,10 +178,10 @@ router.post(
       // Skapa ett pass för varje datum
       for (const date of allDates) {
         const result = await db.query(
-          `INSERT INTO classes (title, description, max_capacity, scheduled_at, duration_minutes, instructor, created_by)
-           VALUES ($1, $2, $3, $4, $5, $6, $7)
+          `INSERT INTO classes (title, description, max_capacity, scheduled_at, duration_minutes, instructor, booking_deadline_hours, created_by)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
            RETURNING *`,
-          [title, description, maxCapacity, date, durationMinutes, instructor, req.user.id]
+          [title, description, maxCapacity, date, durationMinutes, instructor, bookingDeadlineHours, req.user.id]
         );
 
         const newClass = result.rows[0];
@@ -186,6 +193,7 @@ router.post(
           scheduledAt: newClass.scheduled_at,
           durationMinutes: newClass.duration_minutes,
           instructor: newClass.instructor,
+          bookingDeadlineHours: newClass.booking_deadline_hours,
           createdAt: newClass.created_at,
           bookedCount: 0,
           availableSpots: newClass.max_capacity,
@@ -235,6 +243,10 @@ router.put(
       .isInt({ min: 15 })
       .withMessage('Längd måste vara minst 15 minuter'),
     body('instructor').trim().optional(),
+    body('bookingDeadlineHours')
+      .optional()
+      .isInt({ min: 0 })
+      .withMessage('Bokningsdeadline måste vara minst 0 timmar'),
   ],
   async (req, res) => {
     try {
@@ -244,7 +256,7 @@ router.put(
       }
 
       const { id } = req.params;
-      const { title, description, maxCapacity, scheduledAt, durationMinutes, instructor } = req.body;
+      const { title, description, maxCapacity, scheduledAt, durationMinutes, instructor, bookingDeadlineHours } = req.body;
 
       // Kontrollera att passet finns
       const existingClass = await db.query('SELECT * FROM classes WHERE id = $1', [id]);
@@ -272,10 +284,11 @@ router.put(
           max_capacity = COALESCE($3, max_capacity),
           scheduled_at = COALESCE($4, scheduled_at),
           duration_minutes = COALESCE($5, duration_minutes),
-          instructor = COALESCE($6, instructor)
-         WHERE id = $7
+          instructor = COALESCE($6, instructor),
+          booking_deadline_hours = COALESCE($7, booking_deadline_hours)
+         WHERE id = $8
          RETURNING *`,
-        [title, description, maxCapacity, scheduledAt, durationMinutes, instructor, id]
+        [title, description, maxCapacity, scheduledAt, durationMinutes, instructor, bookingDeadlineHours, id]
       );
 
       const updatedClass = result.rows[0];
@@ -287,6 +300,7 @@ router.put(
           title: updatedClass.title,
           description: updatedClass.description,
           maxCapacity: updatedClass.max_capacity,
+          bookingDeadlineHours: updatedClass.booking_deadline_hours,
           scheduledAt: updatedClass.scheduled_at,
           durationMinutes: updatedClass.duration_minutes,
           instructor: updatedClass.instructor,

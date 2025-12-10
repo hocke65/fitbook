@@ -24,6 +24,7 @@ const AdminPage = () => {
     scheduledAt: '',
     durationMinutes: 60,
     instructor: '',
+    bookingDeadlineHours: 0,
   });
   const [additionalDates, setAdditionalDates] = useState([]);
   const [formLoading, setFormLoading] = useState(false);
@@ -95,7 +96,24 @@ const AdminPage = () => {
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
+      hour12: language !== 'sv',
+      timeZone: 'Europe/Stockholm',
     });
+  };
+
+  // Get default datetime (next full hour in Stockholm timezone)
+  const getDefaultDateTime = () => {
+    const now = new Date();
+    // Round up to next full hour
+    now.setMinutes(0, 0, 0);
+    now.setHours(now.getHours() + 1);
+    // Format for datetime-local input (YYYY-MM-DDTHH:MM)
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
   };
 
   // Classes functions
@@ -105,9 +123,10 @@ const AdminPage = () => {
       title: '',
       description: '',
       maxCapacity: 20,
-      scheduledAt: '',
+      scheduledAt: getDefaultDateTime(),
       durationMinutes: 60,
       instructor: '',
+      bookingDeadlineHours: 0,
     });
     setAdditionalDates([]);
     setFormError('');
@@ -123,6 +142,7 @@ const AdminPage = () => {
       scheduledAt: formatDateForInput(classData.scheduledAt),
       durationMinutes: classData.durationMinutes,
       instructor: classData.instructor || '',
+      bookingDeadlineHours: classData.bookingDeadlineHours || 0,
     });
     setAdditionalDates([]);
     setFormError('');
@@ -133,8 +153,8 @@ const AdminPage = () => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: name === 'maxCapacity' || name === 'durationMinutes'
-        ? parseInt(value) || ''
+      [name]: name === 'maxCapacity' || name === 'durationMinutes' || name === 'bookingDeadlineHours'
+        ? parseInt(value) || 0
         : value,
     }));
   };
@@ -145,7 +165,13 @@ const AdminPage = () => {
       const baseDate = new Date(formData.scheduledAt);
       const nextDate = new Date(baseDate);
       nextDate.setDate(nextDate.getDate() + 1);
-      const dateStr = nextDate.toISOString().slice(0, 16);
+      // Format manually to avoid timezone issues with toISOString()
+      const year = nextDate.getFullYear();
+      const month = String(nextDate.getMonth() + 1).padStart(2, '0');
+      const day = String(nextDate.getDate()).padStart(2, '0');
+      const hours = String(nextDate.getHours()).padStart(2, '0');
+      const minutes = String(nextDate.getMinutes()).padStart(2, '0');
+      const dateStr = `${year}-${month}-${day}T${hours}:${minutes}`;
       setAdditionalDates([...additionalDates, dateStr]);
     } else {
       setAdditionalDates([...additionalDates, '']);
@@ -590,7 +616,7 @@ const AdminPage = () => {
                               {user.firstName} {user.lastName}
                             </div>
                             <div style={{ fontSize: '0.75rem', color: 'var(--gray-500)' }}>
-                              {t('admin.memberSince')} {new Date(user.createdAt).toLocaleDateString(language === 'sv' ? 'sv-SE' : 'en-US')}
+                              {t('admin.memberSince')} {new Date(user.createdAt).toLocaleDateString(language === 'sv' ? 'sv-SE' : 'en-US', { timeZone: 'Europe/Stockholm' })}
                             </div>
                           </div>
                         </div>
@@ -795,6 +821,25 @@ const AdminPage = () => {
             </div>
           </div>
 
+          <div className="form-group">
+            <label htmlFor="bookingDeadlineHours" className="form-label">
+              {t('admin.bookingDeadline')}
+            </label>
+            <input
+              type="number"
+              id="bookingDeadlineHours"
+              name="bookingDeadlineHours"
+              className="form-input"
+              value={formData.bookingDeadlineHours}
+              onChange={handleFormChange}
+              min="0"
+              step="1"
+            />
+            <p style={{ fontSize: '0.75rem', color: 'var(--gray-500)', marginTop: '0.25rem' }}>
+              {t('admin.bookingDeadlineHelp')}
+            </p>
+          </div>
+
           <div className="modal-footer" style={{ margin: '1.5rem -1.5rem -1.5rem', padding: '1rem 1.5rem' }}>
             <button
               type="button"
@@ -858,7 +903,7 @@ const AdminPage = () => {
                     {p.firstName} {p.lastName}
                   </div>
                   <div style={{ fontSize: '0.75rem', color: 'var(--gray-500)' }}>
-                    {t('admin.bookedAt')} {new Date(p.bookedAt).toLocaleString(language === 'sv' ? 'sv-SE' : 'en-US')}
+                    {t('admin.bookedAt')} {new Date(p.bookedAt).toLocaleString(language === 'sv' ? 'sv-SE' : 'en-US', { timeZone: 'Europe/Stockholm', hour12: language !== 'sv' })}
                   </div>
                 </div>
               </div>

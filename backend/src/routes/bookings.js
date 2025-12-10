@@ -71,7 +71,7 @@ router.post(
 
       // Lås raden för att undvika race conditions
       const classResult = await client.query(`
-        SELECT id, title, max_capacity, scheduled_at
+        SELECT id, title, max_capacity, scheduled_at, booking_deadline_hours
         FROM classes
         WHERE id = $1
         FOR UPDATE
@@ -98,6 +98,19 @@ router.post(
       if (new Date(classData.scheduled_at) < new Date()) {
         await client.query('ROLLBACK');
         return res.status(400).json({ error: 'Kan inte boka pass som redan har varit.' });
+      }
+
+      // Kontrollera bokningsdeadline
+      const deadlineHours = classData.booking_deadline_hours || 0;
+      if (deadlineHours > 0) {
+        const deadline = new Date(classData.scheduled_at);
+        deadline.setHours(deadline.getHours() - deadlineHours);
+        if (new Date() > deadline) {
+          await client.query('ROLLBACK');
+          return res.status(400).json({
+            error: `Bokningsdeadline har passerat. Bokning stänger ${deadlineHours} timmar innan passet.`
+          });
+        }
       }
 
       // Kontrollera om det finns lediga platser
@@ -172,7 +185,7 @@ router.delete(
 
       // Kontrollera att bokningen finns
       const booking = await db.query(
-        `SELECT b.id, c.title, c.scheduled_at
+        `SELECT b.id, c.title, c.scheduled_at, c.booking_deadline_hours
          FROM bookings b
          JOIN classes c ON b.class_id = c.id
          WHERE b.user_id = $1 AND b.class_id = $2 AND b.status = 'confirmed'`,
@@ -181,6 +194,18 @@ router.delete(
 
       if (booking.rows.length === 0) {
         return res.status(404).json({ error: 'Bokningen hittades inte.' });
+      }
+
+      // Kontrollera avbokningsdeadline (samma som bokningsdeadline)
+      const deadlineHours = booking.rows[0].booking_deadline_hours || 0;
+      if (deadlineHours > 0) {
+        const deadline = new Date(booking.rows[0].scheduled_at);
+        deadline.setHours(deadline.getHours() - deadlineHours);
+        if (new Date() > deadline) {
+          return res.status(400).json({
+            error: `Avbokningsdeadline har passerat. Avbokning stänger ${deadlineHours} timmar innan passet.`
+          });
+        }
       }
 
       // Uppdatera bokning till avbokad

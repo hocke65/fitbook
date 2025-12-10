@@ -69,6 +69,7 @@ const MyBookingsPage = () => {
       weekday: 'short',
       day: 'numeric',
       month: 'short',
+      timeZone: 'Europe/Stockholm',
     });
   };
 
@@ -77,6 +78,8 @@ const MyBookingsPage = () => {
     return date.toLocaleTimeString(language === 'sv' ? 'sv-SE' : 'en-US', {
       hour: '2-digit',
       minute: '2-digit',
+      hour12: language !== 'sv',
+      timeZone: 'Europe/Stockholm',
     });
   };
 

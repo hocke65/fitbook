@@ -100,6 +100,8 @@ const CalendarView = ({ classes, onClassClick, isClassBooked }) => {
     return date.toLocaleTimeString(language === 'sv' ? 'sv-SE' : 'en-US', {
       hour: '2-digit',
       minute: '2-digit',
+      hour12: language !== 'sv',
+      timeZone: 'Europe/Stockholm',
     });
   };
 
@@ -133,6 +135,15 @@ const CalendarView = ({ classes, onClassClick, isClassBooked }) => {
     return dateStart < todayStart;
   };
   const isPastClass = (classData) => new Date(classData.scheduledAt) < new Date();
+
+  // Check if booking deadline has passed
+  const isDeadlinePassed = (classData) => {
+    const deadlineHours = classData.bookingDeadlineHours || 0;
+    if (deadlineHours <= 0) return false;
+    const deadline = new Date(classData.scheduledAt);
+    deadline.setHours(deadline.getHours() - deadlineHours);
+    return new Date() > deadline;
+  };
 
   // Hours for day view
   const hours = Array.from({ length: 15 }, (_, i) => i + 6); // 6:00 - 20:00
@@ -246,13 +257,16 @@ const CalendarView = ({ classes, onClassClick, isClassBooked }) => {
                     dayClasses.map(c => (
                       <div
                         key={c.id}
-                        className={`week-class-card ${isClassBooked(c.id) ? 'booked' : ''} ${c.availableSpots <= 0 ? 'full' : ''} ${isPastClass(c) ? 'past-class' : ''}`}
+                        className={`week-class-card ${isClassBooked(c.id) ? 'booked' : ''} ${c.availableSpots <= 0 ? 'full' : ''} ${isPastClass(c) ? 'past-class' : ''} ${isDeadlinePassed(c) ? 'deadline-passed' : ''}`}
                         onClick={() => onClassClick(c)}
                       >
                         <span className="week-class-time">{formatTime(c.scheduledAt)}</span>
                         <span className="week-class-title">{c.title}</span>
                         <span className="week-class-spots">
-                          {c.availableSpots > 0 ? `${c.availableSpots} ${t('calendar.spotsLeft')}` : t('classes.fullyBooked')}
+                          {isPastClass(c) ? t('classes.classPassed') :
+                           isDeadlinePassed(c) ? `🔒 ${t('classes.deadlinePassed')}` :
+                           c.availableSpots > 0 ? `${c.availableSpots} ${t('calendar.spotsLeft')}` :
+                           t('classes.fullyBooked')}
                         </span>
                       </div>
                     ))
@@ -284,7 +298,7 @@ const CalendarView = ({ classes, onClassClick, isClassBooked }) => {
                     {hourClasses.map(c => (
                       <div
                         key={c.id}
-                        className={`day-class-card ${isClassBooked(c.id) ? 'booked' : ''} ${c.availableSpots <= 0 ? 'full' : ''} ${isPastClass(c) ? 'past-class' : ''}`}
+                        className={`day-class-card ${isClassBooked(c.id) ? 'booked' : ''} ${c.availableSpots <= 0 ? 'full' : ''} ${isPastClass(c) ? 'past-class' : ''} ${isDeadlinePassed(c) ? 'deadline-passed' : ''}`}
                         onClick={() => onClassClick(c)}
                       >
                         <div className="day-class-header">
@@ -298,10 +312,11 @@ const CalendarView = ({ classes, onClassClick, isClassBooked }) => {
                           </p>
                         )}
                         <div className="day-class-footer">
-                          <span className={`day-class-spots ${c.availableSpots <= 0 ? 'full' : c.availableSpots <= 3 ? 'low' : ''}`}>
-                            {c.availableSpots > 0
-                              ? `${c.availableSpots} ${t('calendar.spotsLeft')}`
-                              : t('classes.fullyBooked')
+                          <span className={`day-class-spots ${c.availableSpots <= 0 ? 'full' : c.availableSpots <= 3 ? 'low' : ''} ${isDeadlinePassed(c) ? 'deadline-passed' : ''}`}>
+                            {isPastClass(c) ? t('classes.classPassed') :
+                             isDeadlinePassed(c) ? `🔒 ${t('classes.deadlinePassed')}` :
+                             c.availableSpots > 0 ? `${c.availableSpots} ${t('calendar.spotsLeft')}` :
+                             t('classes.fullyBooked')
                             }
                           </span>
                           {isClassBooked(c.id) && (

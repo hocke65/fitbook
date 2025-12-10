@@ -2,6 +2,7 @@ import axios from 'axios';
 import { getAccessToken } from './msalInstance';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+const AUTH_MODE = process.env.REACT_APP_AUTH_MODE || 'local';
 
 const api = axios.create({
   baseURL: API_URL,
@@ -10,13 +11,21 @@ const api = axios.create({
   },
 });
 
-// Interceptor to add Entra ID token to all requests
+// Interceptor to add token to all requests
 api.interceptors.request.use(
   async (config) => {
-    // Get fresh token from MSAL
-    const token = await getAccessToken();
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    if (AUTH_MODE === 'entra') {
+      // Get fresh token from MSAL for Entra ID
+      const token = await getAccessToken();
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+    } else {
+      // Use local JWT token from localStorage
+      const token = localStorage.getItem('token');
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
     }
     return config;
   },
