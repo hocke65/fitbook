@@ -118,6 +118,7 @@ router.get('/:id', param('id').isInt(), async (req, res) => {
 
 // ============================================
 // POST /api/classes - Skapa nytt pass (Admin/Superuser)
+// Stödjer även skapande av flera pass på olika dagar via additionalDates
 // ============================================
 router.post(
   '/',
@@ -137,6 +138,14 @@ router.post(
       .isInt({ min: 15 })
       .withMessage('Längd måste vara minst 15 minuter'),
     body('instructor').trim().optional(),
+    body('additionalDates')
+      .optional()
+      .isArray()
+      .withMessage('additionalDates måste vara en array'),
+    body('additionalDates.*')
+      .optional()
+      .isISO8601()
+      .withMessage('Ogiltigt datumformat i additionalDates'),
   ],
   async (req, res) => {
     try {
@@ -151,21 +160,25 @@ router.post(
         maxCapacity,
         scheduledAt,
         durationMinutes = 60,
-        instructor
+        instructor,
+        additionalDates = []
       } = req.body;
 
-      const result = await db.query(
-        `INSERT INTO classes (title, description, max_capacity, scheduled_at, duration_minutes, instructor, created_by)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)
-         RETURNING *`,
-        [title, description, maxCapacity, scheduledAt, durationMinutes, instructor, req.user.id]
-      );
+      // Samla alla datum (primärt + extra)
+      const allDates = [scheduledAt, ...additionalDates];
+      const createdClasses = [];
 
-      const newClass = result.rows[0];
+      // Skapa ett pass för varje datum
+      for (const date of allDates) {
+        const result = await db.query(
+          `INSERT INTO classes (title, description, max_capacity, scheduled_at, duration_minutes, instructor, created_by)
+           VALUES ($1, $2, $3, $4, $5, $6, $7)
+           RETURNING *`,
+          [title, description, maxCapacity, date, durationMinutes, instructor, req.user.id]
+        );
 
-      res.status(201).json({
-        message: 'Pass skapat!',
-        class: {
+        const newClass = result.rows[0];
+        createdClasses.push({
           id: newClass.id,
           title: newClass.title,
           description: newClass.description,
@@ -176,8 +189,21 @@ router.post(
           createdAt: newClass.created_at,
           bookedCount: 0,
           availableSpots: newClass.max_capacity,
-        },
-      });
+        });
+      }
+
+      // Returnera svar baserat på antal skapade pass
+      if (createdClasses.length === 1) {
+        res.status(201).json({
+          message: 'Pass skapat!',
+          class: createdClasses[0],
+        });
+      } else {
+        res.status(201).json({
+          message: `${createdClasses.length} pass skapade!`,
+          classes: createdClasses,
+        });
+      }
     } catch (error) {
       console.error('Fel vid skapande av pass:', error);
       res.status(500).json({ error: 'Serverfel vid skapande av pass.' });

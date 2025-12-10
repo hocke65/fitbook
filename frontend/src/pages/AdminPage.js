@@ -25,6 +25,7 @@ const AdminPage = () => {
     durationMinutes: 60,
     instructor: '',
   });
+  const [additionalDates, setAdditionalDates] = useState([]);
   const [formLoading, setFormLoading] = useState(false);
   const [formError, setFormError] = useState('');
 
@@ -108,6 +109,7 @@ const AdminPage = () => {
       durationMinutes: 60,
       instructor: '',
     });
+    setAdditionalDates([]);
     setFormError('');
     setShowModal(true);
   };
@@ -122,6 +124,7 @@ const AdminPage = () => {
       durationMinutes: classData.durationMinutes,
       instructor: classData.instructor || '',
     });
+    setAdditionalDates([]);
     setFormError('');
     setShowModal(true);
   };
@@ -136,6 +139,29 @@ const AdminPage = () => {
     }));
   };
 
+  const addAdditionalDate = () => {
+    if (formData.scheduledAt) {
+      // Kopiera tiden från huvuddatumet men sätt nästa dag
+      const baseDate = new Date(formData.scheduledAt);
+      const nextDate = new Date(baseDate);
+      nextDate.setDate(nextDate.getDate() + 1);
+      const dateStr = nextDate.toISOString().slice(0, 16);
+      setAdditionalDates([...additionalDates, dateStr]);
+    } else {
+      setAdditionalDates([...additionalDates, '']);
+    }
+  };
+
+  const updateAdditionalDate = (index, value) => {
+    const updated = [...additionalDates];
+    updated[index] = value;
+    setAdditionalDates(updated);
+  };
+
+  const removeAdditionalDate = (index) => {
+    setAdditionalDates(additionalDates.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setFormLoading(true);
@@ -146,8 +172,18 @@ const AdminPage = () => {
         await classesApi.update(editingClass.id, formData);
         setSuccess(t('admin.classUpdated'));
       } else {
-        await classesApi.create(formData);
-        setSuccess(t('admin.classCreated'));
+        // Filtrera bort tomma datum
+        const validAdditionalDates = additionalDates.filter(d => d);
+        const dataToSend = {
+          ...formData,
+          additionalDates: validAdditionalDates.length > 0 ? validAdditionalDates : undefined
+        };
+        await classesApi.create(dataToSend);
+        if (validAdditionalDates.length > 0) {
+          setSuccess(t('admin.classesCreated').replace('{count}', validAdditionalDates.length + 1));
+        } else {
+          setSuccess(t('admin.classCreated'));
+        }
       }
       setShowModal(false);
       fetchClasses();
@@ -681,6 +717,48 @@ const AdminPage = () => {
               required
             />
           </div>
+
+          {/* Extra datum för att schemalägga samma pass på flera dagar */}
+          {!editingClass && (
+            <div className="form-group">
+              <label className="form-label">
+                {t('admin.additionalDates')}
+              </label>
+              {additionalDates.map((date, index) => (
+                <div key={index} style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                  <input
+                    type="datetime-local"
+                    className="form-input"
+                    value={date}
+                    onChange={(e) => updateAdditionalDate(index, e.target.value)}
+                    style={{ flex: 1 }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeAdditionalDate(index)}
+                    className="btn btn-ghost"
+                    style={{ color: 'var(--danger)', padding: '0.5rem' }}
+                    title={t('common.remove')}
+                  >
+                    X
+                  </button>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={addAdditionalDate}
+                className="btn btn-secondary btn-sm"
+                style={{ marginTop: '0.5rem' }}
+              >
+                + {t('admin.addDate')}
+              </button>
+              {additionalDates.length > 0 && (
+                <p style={{ fontSize: '0.875rem', color: 'var(--gray-500)', marginTop: '0.5rem' }}>
+                  {t('admin.totalClassesInfo').replace('{count}', additionalDates.filter(d => d).length + 1)}
+                </p>
+              )}
+            </div>
+          )}
 
           <div className="form-row">
             <div className="form-group">
